@@ -246,13 +246,18 @@ function buildReading(spread,placed,topic,question){
 
 /* ── PDF export via Canvas 2D (Thai renders natively) ── */
 function wrapText(ctx,text,maxW){
-  const lines=[];let line='';
-  for(let i=0;i<text.length;i++){
-    const t=line+text[i];
-    if(ctx.measureText(t).width>maxW&&line){lines.push(line);line=text[i];}
-    else line=t;
+  const lines=[];
+  const paragraphs=text.split('\n');
+  for(const para of paragraphs){
+    if(para.trim()===''){lines.push('');continue;}
+    let line='';
+    for(let i=0;i<para.length;i++){
+      const t=line+para[i];
+      if(ctx.measureText(t).width>maxW&&line){lines.push(line);line=para[i];}
+      else line=t;
+    }
+    if(line)lines.push(line);
   }
-  if(line)lines.push(line);
   return lines;
 }
 
@@ -313,7 +318,7 @@ const SPREAD_LAYOUT_IMG={
   three:null,one:null
 };
 
-async function exportPDF(spread,topic,question,placed,reading){
+async function exportPDF(spread,topic,question,placed,reading,aiText){
   const{jsPDF}=window.jspdf;
   const TOPIC_NAMES={love:'❤ ความรัก',career:'การงาน',money:'การเงิน',spiritual:'จิตวิญญาณ',free:'ถามอิสระ'};
   const now=new Date();
@@ -333,16 +338,24 @@ async function exportPDF(spread,topic,question,placed,reading){
   totalH+=50; // title
   totalH+=22+18+18+12; // meta lines
   totalH+=10; // divider
-  // card rows
-  reading.entries.forEach(e=>{
-    dx.font=`13px Sarabun,Arial,sans-serif`;
-    const lines=wrapText(dx,e.text,contentW-260);
-    totalH+=Math.max(lines.length*LINE+8, 52)+10;
-  });
-  totalH+=20; // divider before summary
   dx.font=`13px Sarabun,Arial,sans-serif`;
   const sumLines=wrapText(dx,reading.summary,contentW-20);
-  totalH+=sumLines.length*LINE+50;
+  if(topic==='free'&&aiText){
+    // card names header
+    totalH+=24+reading.entries.length*18+24;
+    // ai text block
+    const aiLines=wrapText(dx,aiText,contentW-10);
+    totalH+=aiLines.length*LINE+30;
+  } else {
+    // standard table rows
+    reading.entries.forEach(e=>{
+      dx.font=`13px Sarabun,Arial,sans-serif`;
+      const lines=wrapText(dx,e.text,contentW-260);
+      totalH+=Math.max(lines.length*LINE+8,52)+10;
+    });
+    totalH+=20; // divider before summary
+    totalH+=sumLines.length*LINE+50;
+  }
   totalH+=PAD+20; // bottom
 
   const PH=Math.max(1123,totalH);
@@ -385,47 +398,52 @@ async function exportPDF(spread,topic,question,placed,reading){
   };
   divider(y);y+=16;
 
-  // Table header
-  const C1=PAD+14,C2=C1+170,C3=C2+180;
-  ctx.fillStyle='rgba(201,168,76,.1)';ctx.fillRect(PAD+10,y,contentW,22);
-  ctx.font='bold 11px Sarabun,Arial,sans-serif';ctx.fillStyle='#c9a84c';ctx.textAlign='left';
-  ctx.fillText('ตำแหน่ง',C1,y+15);
-  ctx.fillText('ไพ่',C2,y+15);
-  ctx.fillText('คำทำนาย',C3,y+15);
-  y+=26;
-
-  // Card rows
-  reading.entries.forEach((e,i)=>{
-    ctx.font='13px Sarabun,Arial,sans-serif';
-    const tlines=wrapText(ctx,e.text,PW-C3-PAD-16);
-    const rowH=Math.max(tlines.length*LINE+6, 46);
-
-    if(i%2===0){ctx.fillStyle='rgba(255,255,255,.025)';ctx.fillRect(PAD+10,y,contentW,rowH);}
-
-    ctx.textAlign='left';
-    ctx.font='12px Sarabun,Arial,sans-serif';ctx.fillStyle='#9a8a7a';
-    ctx.fillText(e.pos,C1,y+18);
-
-    ctx.font='bold 13px Sarabun,Arial,sans-serif';ctx.fillStyle=e.isMajor?'#ffd700':'#e8c97a';
-    ctx.fillText((e.isMajor?'⭐ ':'')+e.name,C2,y+18);
-
+  if(topic==='free'&&aiText){
+    // ── AI block (free topic) ──
+    ctx.font='bold 14px Sarabun,Arial,sans-serif';ctx.fillStyle='#c9a84c';ctx.textAlign='left';
+    ctx.fillText('✦ คำทำนายจาก AI (Gemini)',PAD+14,y);y+=24;
+    // card names header
+    reading.entries.forEach((e,i)=>{
+      ctx.font='bold 12px Sarabun,Arial,sans-serif';ctx.fillStyle='#e8c97a';
+      ctx.fillText(`${i+1}. ${e.pos} — ${e.name}`,PAD+14,y);y+=18;
+    });
+    y+=10;
+    divider(y);y+=14;
+    ctx.font='13px Sarabun,Arial,sans-serif';ctx.fillStyle='#e8dcc8';ctx.textAlign='left';
+    const aiLines=wrapText(ctx,aiText,contentW-10);
+    aiLines.forEach(l=>{ctx.fillText(l,PAD+14,y);y+=LINE;});
+    y+=16;
+  } else {
+    // ── Standard table ──
+    const C1=PAD+14,C2=C1+170,C3=C2+180;
+    ctx.fillStyle='rgba(201,168,76,.1)';ctx.fillRect(PAD+10,y,contentW,22);
+    ctx.font='bold 11px Sarabun,Arial,sans-serif';ctx.fillStyle='#c9a84c';ctx.textAlign='left';
+    ctx.fillText('ตำแหน่ง',C1,y+15);ctx.fillText('ไพ่',C2,y+15);ctx.fillText('คำทำนาย',C3,y+15);
+    y+=26;
+    reading.entries.forEach((e,i)=>{
+      ctx.font='13px Sarabun,Arial,sans-serif';
+      const tlines=wrapText(ctx,e.text,PW-C3-PAD-16);
+      const rowH=Math.max(tlines.length*LINE+6,46);
+      if(i%2===0){ctx.fillStyle='rgba(255,255,255,.025)';ctx.fillRect(PAD+10,y,contentW,rowH);}
+      ctx.textAlign='left';
+      ctx.font='12px Sarabun,Arial,sans-serif';ctx.fillStyle='#9a8a7a';ctx.fillText(e.pos,C1,y+18);
+      ctx.font='bold 13px Sarabun,Arial,sans-serif';ctx.fillStyle=e.isMajor?'#ffd700':'#e8c97a';
+      ctx.fillText((e.isMajor?'⭐ ':'')+e.name,C2,y+18);
+      ctx.font='13px Sarabun,Arial,sans-serif';ctx.fillStyle='#e8dcc8';
+      tlines.forEach((tl,ti)=>ctx.fillText(tl,C3,y+18+ti*LINE));
+      y+=rowH+8;
+    });
+    y+=12;
+    divider(y);y+=18;
+    ctx.font='bold 15px Sarabun,Arial,sans-serif';ctx.fillStyle='#c9a84c';ctx.textAlign='left';
+    ctx.fillText('✦ สรุปจากโซเฟีย',PAD+14,y);y+=22;
+    ctx.strokeStyle='rgba(201,168,76,.3)';ctx.lineWidth=1;
+    ctx.strokeRect(PAD+10,y,contentW,sumLines.length*LINE+20);
+    ctx.fillStyle='rgba(45,27,78,.4)';ctx.fillRect(PAD+10,y,contentW,sumLines.length*LINE+20);
     ctx.font='13px Sarabun,Arial,sans-serif';ctx.fillStyle='#e8dcc8';
-    tlines.forEach((tl,ti)=>ctx.fillText(tl,C3,y+18+ti*LINE));
-
-    y+=rowH+8;
-  });
-  y+=12;
-
-  // Summary
-  divider(y);y+=18;
-  ctx.font='bold 15px Sarabun,Arial,sans-serif';ctx.fillStyle='#c9a84c';ctx.textAlign='left';
-  ctx.fillText('✦ สรุปจากโซเฟีย',PAD+14,y);y+=22;
-  ctx.strokeStyle='rgba(201,168,76,.3)';ctx.lineWidth=1;
-  ctx.strokeRect(PAD+10,y,contentW,sumLines.length*LINE+20);
-  ctx.fillStyle='rgba(45,27,78,.4)';ctx.fillRect(PAD+10,y,contentW,sumLines.length*LINE+20);
-  ctx.font='13px Sarabun,Arial,sans-serif';ctx.fillStyle='#e8dcc8';
-  sumLines.forEach((l,i)=>ctx.fillText(l,PAD+20,y+18+i*LINE));
-  y+=sumLines.length*LINE+30;
+    sumLines.forEach((l,i)=>ctx.fillText(l,PAD+20,y+18+i*LINE));
+    y+=sumLines.length*LINE+30;
+  }
 
   // Footer
   ctx.textAlign='center';ctx.font='10px Sarabun,Arial,sans-serif';
@@ -439,6 +457,48 @@ async function exportPDF(spread,topic,question,placed,reading){
   doc.save(`Sofia_Tarot_${fileDate}.pdf`);
 }
 
+
+/* ── Gemini AI Integration (via backend proxy — key lives in Render env var) ── */
+const GEMINI_MODELS=['gemini-2.5-flash','gemini-2.0-flash','gemini-1.5-flash']; // kept for reference
+
+async function callGemini(entries, question) {
+  const total = entries.length;
+  const cardList = entries.map((e,i)=>
+    `${i+1}. ตำแหน่ง "${e.pos}" → ไพ่: ${e.name}`
+  ).join('\n');
+
+  const prompt =
+`คุณคือหมอดูไพ่ทาโรต์ชื่อ "โซเฟีย" ตอบเป็นภาษาไทย โทนอ่อนโยน
+
+คำถามของผู้ถาม: "${question}"
+
+ไพ่ที่เปิดได้ทั้งหมด ${total} ใบ:
+${cardList}
+
+กรุณาตีความไพ่ทั้ง ${total} ใบนี้ **โดยรวม** เป็นคำทำนายเชิงสรุปภาพรวมค่ะ
+- ไม่ต้องแยกตีความรายใบ
+- ให้สรุปเป็น 1 ย่อหน้า (4-6 ประโยค) ที่ตอบคำถาม "${question}" โดยตรง
+- นำพลังงานและความหมายของไพ่แต่ละใบมาผสานเป็นเรื่องเดียว
+- โทนอ่อนโยน ให้กำลังใจ ลงท้ายด้วย "ค่ะ"`;
+
+  // Try each model in order, with 1 retry on 503/overload
+  const res=await fetch('/api/gemini',{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({
+      contents:[{parts:[{text:prompt}]}],
+      generationConfig:{temperature:0.85,maxOutputTokens:3000}
+    })
+  });
+  if(!res.ok){
+    const err=await res.json().catch(()=>({}));
+    throw new Error(err.detail||`HTTP ${res.status}`);
+  }
+  const data=await res.json();
+  const text=data?.text||'';
+  if(!text) throw new Error('ไม่ได้รับคำตอบจาก AI ค่ะ');
+  return text;
+}
 
 const SPREAD_DEFS={
   one:{id:'one',name:'1 ใบ — ถามตอบ',icon:'🎴',count:1,W:90,H:140,
@@ -709,7 +769,11 @@ function App(){
   const[modalCard,setModalCard]=useState(null);
   const[genReading,setGenReading]=useState(false);
   const[pdfLoading,setPdfLoading]=useState(false);
+  const[htmlLoading,setHtmlLoading]=useState(false);
   const[autoPlacing,setAutoPlacing]=useState(false);
+  const[aiInterp,setAiInterp]=useState(null);   // null | 'loading' | string
+  const[aiError,setAiError]=useState('');
+  const[aiRetry,setAiRetry]=useState(0);
 
   const spread=SPREAD_DEFS[spreadId];
   const deckRef=useRef(null);
@@ -730,6 +794,17 @@ function App(){
       },800);
     }
   },[allFlipped,reading,genReading,phase]);
+
+  // Auto-trigger Gemini when reading ready + topic is free
+  useEffect(()=>{
+    if(reading&&topic==='free'&&!aiInterp&&!aiError){
+      setAiInterp('loading');
+      setSofia('โซเฟียกำลังให้ AI ตีความตามคำถามของคุณค่ะ ✨');
+      callGemini(reading.entries,question)
+        .then(text=>{setAiInterp(text);setSofia('AI ตีความเสร็จแล้วค่ะ 🌟','voice_11_reading_summary');})
+        .catch(e=>{setAiError('เกิดข้อผิดพลาด: '+e.message);setAiInterp(null);});
+    }
+  },[reading,aiRetry]);
 
   useEffect(()=>{
     if(allPlaced&&!allFlipped&&phase==='spread'&&!reading)
@@ -814,12 +889,12 @@ function App(){
   const handleExportPDF=async()=>{
     if(pdfLoading)return;
     setPdfLoading(true);setSofia('กำลังสร้าง PDF ค่ะ รอสักครู่นะคะ 📄','voice_14_export_pdf');
-    try{await exportPDF(spread,topic,question,placed,reading);}
+    const aiText=(topic==='free'&&aiInterp&&aiInterp!=='loading')?aiInterp:null;
+    try{await exportPDF(spread,topic,question,placed,reading,aiText);}
     catch(e){console.error(e);}
     finally{setPdfLoading(false);}
   };
 
-  const[htmlLoading,setHtmlLoading]=useState(false);
   const handleExportHTML=()=>{
     if(htmlLoading||!reading)return;
     setHtmlLoading(true);
@@ -828,6 +903,10 @@ function App(){
       const now=new Date();
       const dateStr=now.toLocaleDateString('th-TH',{year:'numeric',month:'long',day:'numeric'});
       const fileDate=now.toISOString().slice(0,10);
+      const useAI=(topic==='free'&&aiInterp&&aiInterp!=='loading');
+      const cardHeaders=reading.entries.map((e,i)=>
+        `<div class="card-header"><span class="card-num">${i+1}.</span> <span class="card-pos">${e.pos}</span> — <span class="card-name">${e.isMajor?'⭐ ':''}${e.name}</span></div>`
+      ).join('');
       const cardRows=reading.entries.map(e=>`
         <tr>
           <td class="pos">${e.pos}</td>
@@ -849,13 +928,24 @@ function App(){
   td.pos{color:#9a8a7a;white-space:nowrap;width:160px;}
   td.name{color:#e8c97a;font-weight:bold;white-space:nowrap;width:180px;}
   td.text{color:#e8dcc8;}
+  .ai-block{background:rgba(10,6,18,.5);border:1px solid rgba(201,168,76,.3);border-radius:8px;padding:1.2rem 1.5rem;margin:1rem 0;white-space:pre-wrap;font-size:.92rem;line-height:1.85;}
+  .ai-title{color:#c9a84c;font-weight:bold;margin-bottom:.8rem;font-size:1rem;}
+  .card-header{color:#9a8a7a;font-size:.78rem;margin-bottom:.6rem;}
+  .card-num{color:#c9a84c;}.card-pos{color:#e8dcc8;}.card-name{color:#e8c97a;font-weight:bold;}
   .summary{margin-top:1.2rem;padding:1rem 1.2rem;border:1px solid rgba(201,168,76,.3);border-radius:6px;background:rgba(45,27,78,.4);font-size:.9rem;}
   .summary-title{color:#c9a84c;font-weight:bold;margin-bottom:.5rem;}
   .footer{text-align:center;color:#4a3a2a;font-size:.72rem;margin-top:1.8rem;}
+  .ai-badge{display:inline-block;font-size:.7rem;color:#9a70e0;border:1px solid #9a70e0;border-radius:10px;padding:.1rem .5rem;margin-left:.5rem;vertical-align:middle;}
 </style></head><body>
-<h1>🔮 Sofia Tarot — คำทำนาย</h1>
+<h1>🔮 Sofia Tarot — คำทำนาย${useAI?'<span class="ai-badge">AI Gemini</span>':''}</h1>
 <div class="sub">${spread.name} &nbsp;|&nbsp; ${TOPIC_NAMES[topic]||topic} &nbsp;|&nbsp; ${dateStr}<br>คำถาม: "${question}"</div>
 <div class="divider"></div>
+${useAI?`
+<div>${cardHeaders}</div>
+<div class="divider"></div>
+<div class="ai-block">
+  <div class="ai-title">✦ คำทำนายจาก AI ตามคำถามของคุณ</div>${(aiInterp||'').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
+</div>`:`
 <table>
   <thead><tr><th>ตำแหน่ง</th><th>ไพ่</th><th>คำทำนาย</th></tr></thead>
   <tbody>${cardRows}</tbody>
@@ -864,7 +954,7 @@ function App(){
 <div class="summary">
   <div class="summary-title">✦ สรุปภาพรวม</div>
   ${reading.summary.replace(/\n/g,'<br>')}
-</div>
+</div>`}
 <div class="footer">Sofia Tarot · สร้างเมื่อ ${dateStr}</div>
 </body></html>`;
       const blob=new Blob([html],{type:'text/html;charset=utf-8'});
@@ -877,6 +967,21 @@ function App(){
     finally{setHtmlLoading(false);}
   };
 
+  const handleAskAI=async()=>{
+    if(!reading||aiInterp==='loading')return;
+    setAiInterp('loading');setAiError('');
+    setSofia('โซเฟียกำลังถามพลังจักรวาลผ่าน AI ให้คุณค่ะ ✨');
+    try{
+      const text=await callGemini(reading.entries,question);
+      setAiInterp(text);
+      setSofia('AI ตีความเสร็จแล้วค่ะ 🌟','voice_11_reading_summary');
+    }catch(e){
+      setAiError('เกิดข้อผิดพลาด: '+e.message);
+      setAiInterp(null);
+      setSofia('ขอโทษค่ะ เชื่อมต่อ AI ไม่ได้ในขณะนี้ 🙏');
+    }
+  };
+
   const[farewellActive,setFarewellActive]=useState(false);
 
   const doReset=()=>{
@@ -884,6 +989,7 @@ function App(){
     setPhase('welcome');setTopic('free');setQuestion('');setDeck([]);setDeckIdx(0);
     setPlaced({});setFlipped(new Set());setActiveSlot(null);setFlying(null);
     setReading(null);setShuffleCount(0);setAutoPlacing(false);setGenReading(false);
+    setAiInterp(null);setAiError('');
     setSofia(SOFIA_MSGS.welcome);
   };
 
@@ -1000,20 +1106,46 @@ function App(){
         allPlaced&&!reading&&React.createElement('div',{className:'action-row'},
           React.createElement('button',{className:'btn btn-flip',onClick:handleFlipAll},
             genReading?React.createElement('span',null,'กำลังอ่าน',React.createElement('span',{className:'ldots'},
-              React.createElement('span'),React.createElement('span'),React.createElement('span'))):'✨ เปิดไพ่ทั้งหมด')),
+               React.createElement('span'),React.createElement('span'),React.createElement('span'))):'✨ เปิดไพ่ทั้งหมด')),
 
         reading&&React.createElement('div',{className:'reading-box'},
           React.createElement('div',{className:'reading-title'},'🔮 คำทำนายจากโซเฟีย'),
           React.createElement('p',{style:{textAlign:'center',fontSize:'.8rem',color:'var(--muted)',marginBottom:'.7rem'}},
             `${TOPICS.find(t=>t.id===topic)?.label||''} | "${question}"`),
-          reading.entries.map((e,i)=>
+          topic!=='free'&&reading.entries.map((e,i)=>
             React.createElement('div',{key:i,className:'reading-entry'},
               React.createElement('img',{className:'rcard-thumb',src:e.img,alt:e.name,onError:ev=>{ev.target.style.display='none'}}),
               React.createElement('div',{className:'rcard-content'},
                 React.createElement('div',{className:'reading-card-name'},(e.isMajor?'⭐ ':'')+e.name),
                 React.createElement('div',{style:{color:'var(--muted)',fontSize:'.74rem',marginBottom:'.35rem'}},'ตำแหน่ง: '+e.pos),
                 React.createElement('div',{className:'reading-text'},e.text)))),
-          React.createElement('div',{className:'reading-summary'},reading.summary)),
+          topic!=='free'&&React.createElement('div',{className:'reading-summary'},reading.summary),
+
+          topic==='free'&&React.createElement('div',{style:{marginTop:'1.2rem'}},
+            React.createElement('div',{style:{borderTop:'1px solid rgba(201,168,76,.2)',paddingTop:'1rem'}},
+              React.createElement('div',{style:{display:'flex',alignItems:'center',gap:'.6rem',marginBottom:'.7rem'}},
+                React.createElement('span',{style:{color:'var(--gold)',fontFamily:"'Cinzel',serif",fontSize:'.88rem'}},'✦ AI ตีความตามคำถามของคุณ'),
+                React.createElement('span',{style:{fontSize:'.72rem',color:'var(--muted)'}},
+                  '— powered by Gemini')),
+              aiInterp==='loading'&&React.createElement('div',{style:{textAlign:'center',color:'var(--muted)',padding:'1rem'}},
+                '✨ AI กำลังตีความ',React.createElement('span',{className:'ldots'},
+                  React.createElement('span'),React.createElement('span'),React.createElement('span'))),
+              aiError&&React.createElement('div',{style:{color:'#e05050',fontSize:'.82rem',padding:'.8rem',background:'rgba(224,80,80,.08)',borderRadius:6,display:'flex',alignItems:'center',justifyContent:'space-between',gap:'1rem'}},
+                React.createElement('span',null,aiError),
+                React.createElement('button',{className:'btn btn-sm',style:{borderColor:'#e05050',color:'#e05050',flexShrink:0},
+                  onClick:()=>{setAiError('');setAiInterp(null);setAiRetry(r=>r+1);}
+                },'🔄 ลองใหม่')),
+              aiInterp&&aiInterp!=='loading'&&React.createElement('div',{
+                style:{background:'rgba(10,6,18,.4)',border:'1px solid rgba(201,168,76,.25)',borderRadius:10,
+                  padding:'1rem 1.2rem',fontSize:'.9rem',lineHeight:1.8,whiteSpace:'pre-wrap',color:'#f0e6d3'}
+              },aiInterp),
+              aiInterp&&aiInterp!=='loading'&&React.createElement('button',{
+                className:'btn btn-sm',style:{marginTop:'.7rem',borderColor:'var(--muted)',color:'var(--muted)'},
+                onClick:()=>{setAiInterp(null);setAiError('');setAiRetry(r=>r+1);}
+              },'🔄 ขอคำตีความใหม่')
+            )
+          )
+        ),
 
         reading&&React.createElement('div',{className:'action-row'},
           React.createElement('button',{className:'btn btn-export',

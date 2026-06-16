@@ -1,0 +1,9 @@
+services:
+  - type: web
+    name: sofia-tarot
+    runtime: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn server:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: GEMINI_KEY
+        sync: false   # ← กรอกค่าใน Render Dashboard เท่านั้น ไม่ commit ขึ้น GitHub
