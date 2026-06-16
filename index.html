@@ -1,0 +1,1045 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>โซเฟีย — หมอดูไพ่ทาโรต์</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--gold:#c9a84c;--gold2:#e8c97a;--purple:#2d1b4e;--dark:#0a0612;--purple2:#4a2d7a;--text:#f0e6d3;--muted:#9a8a7a;}
+@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Sarabun:wght@300;400;600&display=swap');
+html,body{overflow-x:hidden}
+body{background:var(--dark);color:var(--text);font-family:'Sarabun',sans-serif;min-height:100vh}
+body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellipse at 20% 20%,#1a0a2e 0%,transparent 50%),radial-gradient(ellipse at 80% 80%,#0a1a2e 0%,transparent 50%),var(--dark);z-index:-2}
+body::after{content:'';position:fixed;inset:0;background-image:radial-gradient(1px 1px at 10% 15%,rgba(255,255,255,.6),transparent),radial-gradient(1px 1px at 30% 45%,rgba(255,255,255,.4),transparent),radial-gradient(1px 1px at 60% 10%,rgba(255,255,255,.5),transparent),radial-gradient(1px 1px at 80% 30%,rgba(255,255,255,.3),transparent),radial-gradient(2px 2px at 70% 50%,rgba(201,168,76,.4),transparent),radial-gradient(2px 2px at 35% 25%,rgba(201,168,76,.3),transparent);z-index:-1;animation:twinkle 4s ease-in-out infinite alternate}
+@keyframes twinkle{0%{opacity:.7}100%{opacity:1}}
+.app{min-height:100vh;display:flex;flex-direction:column}
+.header{text-align:center;padding:1.5rem 1rem .5rem}
+.header h1{font-size:clamp(1.5rem,3vw,2.4rem);color:var(--gold);font-family:'Cinzel',serif;text-shadow:0 0 20px rgba(201,168,76,.5);letter-spacing:.1em}
+.header p{color:var(--muted);font-size:.85rem;margin-top:.3rem}
+.divider{height:1px;background:linear-gradient(90deg,transparent,var(--gold),transparent);margin:.6rem auto;max-width:400px}
+
+/* ── Sofia 3x ── */
+.sofia-row{display:flex;justify-content:center;align-items:flex-start;gap:1.5rem;padding:.8rem 1rem;flex-wrap:wrap}
+.sofia-frame{position:relative;flex-shrink:0}
+.sofia-glow{position:absolute;inset:-4px;border-radius:14px;background:linear-gradient(45deg,var(--gold),var(--purple2),var(--gold));opacity:.4;filter:blur(8px);z-index:-1;animation:pglow 3s ease-in-out infinite}
+@keyframes pglow{0%,100%{opacity:.3}50%{opacity:.65}}
+.sofia-media{width:240px;height:324px;object-fit:cover;border-radius:12px;border:2px solid var(--gold);display:block}
+.sofia-name{text-align:center;color:var(--gold);font-size:.8rem;font-family:'Cinzel',serif;margin-top:.4rem;letter-spacing:.08em}
+.unmute-btn{display:block;margin:.3rem auto 0;font-size:.72rem;padding:.2rem .6rem;border:1px solid rgba(201,168,76,.4);border-radius:10px;background:rgba(201,168,76,.08);color:var(--gold);cursor:pointer;font-family:'Sarabun',sans-serif}
+.speech{flex:1;min-width:220px;max-width:520px;background:rgba(45,27,78,.55);border:1px solid rgba(201,168,76,.3);border-radius:14px;padding:1rem 1.2rem;position:relative;backdrop-filter:blur(6px)}
+.speech::before{content:'';position:absolute;left:-10px;top:28px;border:6px solid transparent;border-right-color:rgba(201,168,76,.3)}
+.speech-name{color:var(--gold);font-size:.76rem;margin-bottom:.35rem;font-family:'Cinzel',serif}
+.speech-text{font-size:.95rem;line-height:1.7}
+.steps{display:flex;justify-content:center;gap:.4rem;margin:.5rem 0;flex-wrap:wrap}
+.step{display:flex;align-items:center;gap:.25rem;font-size:.72rem;color:var(--muted)}
+.step.active{color:var(--gold)}.step.done{color:#6a9a6a}
+.step-dot{width:7px;height:7px;border-radius:50%;background:currentColor;flex-shrink:0}
+.step-line{width:16px;height:1px;background:rgba(255,255,255,.15)}
+.btn{padding:.55rem 1.2rem;border-radius:8px;border:1px solid var(--gold);background:rgba(201,168,76,.08);color:var(--gold);cursor:pointer;font-family:'Sarabun',sans-serif;font-size:.88rem;transition:all .25s;font-weight:600}
+.btn:hover{background:rgba(201,168,76,.22);box-shadow:0 0 10px rgba(201,168,76,.25)}
+.btn-primary{background:linear-gradient(135deg,var(--purple2),#6a3da0);color:#fff;border-color:var(--gold2)}
+.btn-primary:hover{background:linear-gradient(135deg,#5a2d8a,#7a4db0)}
+.btn-sm{padding:.35rem .8rem;font-size:.78rem}
+.btn-danger{border-color:#e06060;color:#e06060}.btn-danger:hover{background:rgba(224,96,96,.15)}
+.btn-export{border-color:#4a9a6a;color:#4a9a6a}.btn-export:hover{background:rgba(74,154,106,.15)}
+.btn-flip{border-color:#9a70e0;color:#9a70e0}.btn-flip:hover{background:rgba(154,112,224,.15)}
+.btn-auto{border-color:#70b0e0;color:#70b0e0}.btn-auto:hover{background:rgba(112,176,224,.15)}
+.action-row{display:flex;gap:.5rem;flex-wrap:wrap;justify-content:center;margin:.8rem 0}
+.main{flex:1;max-width:1100px;margin:0 auto;width:100%;padding:0 .8rem 2rem}
+.section-box{background:rgba(255,255,255,.02);border:1px solid rgba(201,168,76,.15);border-radius:12px;padding:.9rem;margin:.6rem 0}
+.section-label{color:var(--gold);font-size:.8rem;margin-bottom:.55rem;font-family:'Cinzel',serif;letter-spacing:.05em}
+.spread-selector{display:flex;flex-wrap:wrap;gap:.5rem;justify-content:center}
+.spread-btn{padding:.45rem .9rem;border-radius:18px;border:1px solid rgba(201,168,76,.35);background:transparent;color:var(--muted);cursor:pointer;font-family:'Sarabun',sans-serif;font-size:.82rem;transition:all .25s}
+.spread-btn.active,.spread-btn:hover{border-color:var(--gold);color:var(--gold);background:rgba(201,168,76,.1)}
+.topic-grid{display:flex;flex-wrap:wrap;gap:.45rem;justify-content:center}
+.topic-btn{padding:.35rem .8rem;border-radius:14px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.04);color:var(--muted);cursor:pointer;font-family:'Sarabun',sans-serif;font-size:.8rem;transition:all .25s}
+.topic-btn.sel-love{border-color:#e07070;color:#e07070;background:rgba(224,112,112,.1)}
+.topic-btn.sel-career{border-color:#70a0e0;color:#70a0e0;background:rgba(112,160,224,.1)}
+.topic-btn.sel-money{border-color:#70c070;color:#70c070;background:rgba(112,192,112,.1)}
+.topic-btn.sel-spiritual{border-color:#c070e0;color:#c070e0;background:rgba(192,112,224,.1)}
+.topic-btn.sel-free{border-color:var(--gold);color:var(--gold);background:rgba(201,168,76,.1)}
+.topic-btn:not([class*="sel-"]):hover{border-color:rgba(255,255,255,.3);color:var(--text)}
+.quick-q{display:flex;flex-wrap:wrap;gap:.35rem;margin-top:.4rem}
+.quick-btn{padding:.28rem .6rem;border-radius:10px;border:1px solid rgba(255,255,255,.08);background:rgba(255,255,255,.03);color:var(--muted);cursor:pointer;font-family:'Sarabun',sans-serif;font-size:.75rem;transition:all .2s}
+.quick-btn:hover{border-color:rgba(201,168,76,.4);color:var(--text)}
+.q-input{width:100%;padding:.7rem .9rem;background:rgba(255,255,255,.04);border:1px solid rgba(201,168,76,.3);border-radius:9px;color:var(--text);font-family:'Sarabun',sans-serif;font-size:.9rem;resize:none}
+.q-input:focus{outline:none;border-color:var(--gold)}
+.q-input::placeholder{color:var(--muted)}
+.deck-area{display:flex;flex-direction:column;align-items:center;gap:.6rem}
+.deck-pile{position:relative;width:70px;height:112px;cursor:pointer}
+.deck-pile .dc{position:absolute;width:70px;height:112px;border-radius:7px;border:1.5px solid var(--gold);overflow:hidden;transition:transform .2s}
+.deck-pile .dc img{width:100%;height:100%;object-fit:cover}
+.deck-pile:hover .dc:last-child{transform:translateY(-5px)}
+.deck-label{color:var(--muted);font-size:.72rem;text-align:center}
+.deck-remain{color:var(--gold);font-size:.78rem;font-weight:600}
+@keyframes sh1{0%{transform:translate(0,0) rotate(0)}30%{transform:translate(-50px,-15px) rotate(-12deg)}60%{transform:translate(40px,-8px) rotate(8deg)}100%{transform:translate(0,0) rotate(0)}}
+@keyframes sh2{0%{transform:translate(0,0) rotate(0)}30%{transform:translate(50px,8px) rotate(10deg)}60%{transform:translate(-40px,-12px) rotate(-7deg)}100%{transform:translate(0,0) rotate(0)}}
+@keyframes sh3{0%{transform:translate(0,0) rotate(0)}30%{transform:translate(0,-25px) rotate(5deg)}60%{transform:translate(25px,8px) rotate(-10deg)}100%{transform:translate(0,0) rotate(0)}}
+.shuffling .dc:nth-child(1){animation:sh1 .55s ease-in-out}
+.shuffling .dc:nth-child(2){animation:sh2 .55s ease-in-out .08s}
+.shuffling .dc:nth-child(3){animation:sh3 .55s ease-in-out .16s}
+.shuffling .dc:nth-child(4){animation:sh1 .55s ease-in-out .05s reverse}
+.shuffling .dc:nth-child(5){animation:sh2 .55s ease-in-out reverse}
+
+/* ── Spread: zoom 1.5x (expands CSS box, no scrollbar) ── */
+.spread-outer{display:flex;justify-content:center;padding:.5rem 0}
+.spread-canvas{position:relative;zoom:1.5}
+
+/* ── Card Slot ── */
+.cslot{position:absolute;cursor:pointer}
+.cslot-inner{width:70px;height:112px;border-radius:7px;border:1.5px dashed rgba(201,168,76,.35);display:flex;flex-direction:column;align-items:center;justify-content:center;transition:all .3s;background:rgba(255,255,255,.02);position:relative}
+.cslot-inner.active{border:2px solid var(--gold);background:rgba(201,168,76,.12);box-shadow:0 0 16px rgba(201,168,76,.4);animation:slot-pulse .8s ease-in-out infinite}
+@keyframes slot-pulse{0%,100%{box-shadow:0 0 16px rgba(201,168,76,.4)}50%{box-shadow:0 0 28px rgba(201,168,76,.7)}}
+.cslot-inner.has-card{border:1.5px solid var(--gold)}
+.cslot-inner.hover-empty:hover{border-color:rgba(201,168,76,.7);background:rgba(201,168,76,.07)}
+.cslot-inner.rotate90{transform:rotate(90deg)}
+.cslot-num{font-size:.65rem;color:rgba(201,168,76,.6);font-family:'Cinzel',serif}
+.cslot-label{font-size:.6rem;color:var(--muted);text-align:center;padding:0 3px;line-height:1.2;margin-top:2px;max-width:66px;word-break:break-word;white-space:normal}
+.cflip-wrap{width:70px;height:112px;perspective:500px;position:absolute;inset:0}
+.cflip-inner{width:100%;height:100%;position:relative;transform-style:preserve-3d;transition:transform .65s cubic-bezier(.4,0,.2,1)}
+.cflip-inner.flipped{transform:rotateY(180deg)}
+.cface,.cback{position:absolute;inset:0;backface-visibility:hidden;border-radius:6px;overflow:hidden}
+.cback img,.cface img{width:100%;height:100%;object-fit:cover}
+.cface{transform:rotateY(180deg)}
+
+/* ── Slot name label BELOW card: wrap + no overflow ── */
+.cslot-name-label{
+  position:absolute;
+  top:116px;
+  left:50%;
+  transform:translateX(-50%);
+  width:72px;
+  font-size:.58rem;
+  color:var(--gold);
+  text-align:center;
+  pointer-events:none;
+  white-space:normal;
+  word-break:break-word;
+  line-height:1.3;
+}
+
+/* ── Flying card ── */
+@keyframes fly-card{
+  0%{opacity:1;transform:translate(0,0) scale(1)}
+  45%{opacity:1;transform:translate(var(--fx),var(--fy)) scale(1.15)}
+  100%{opacity:.1;transform:translate(var(--tx),var(--ty)) scale(var(--ts))}
+}
+.flying-card{position:fixed;z-index:9999;pointer-events:none;border-radius:7px;overflow:hidden;border:2px solid var(--gold2);box-shadow:0 0 20px rgba(201,168,76,.6);animation:fly-card .6s cubic-bezier(.4,0,.2,1) forwards}
+.flying-card img{width:100%;height:100%;object-fit:cover}
+.particle{position:fixed;pointer-events:none;border-radius:50%;animation:float-up linear forwards}
+@keyframes float-up{0%{opacity:1;transform:translateY(0)}100%{opacity:0;transform:translateY(-100px)}}
+
+/* ── Reading ── */
+.reading-box{background:rgba(45,27,78,.3);border:1px solid rgba(201,168,76,.2);border-radius:14px;padding:1.2rem;margin:.8rem 0;backdrop-filter:blur(4px)}
+.reading-title{color:var(--gold);font-family:'Cinzel',serif;font-size:.95rem;text-align:center;margin-bottom:.9rem}
+.reading-entry{display:flex;gap:.8rem;margin-bottom:1rem;padding-bottom:1rem;border-bottom:1px solid rgba(201,168,76,.1);align-items:flex-start}
+.reading-entry:last-child{border-bottom:none;margin-bottom:0;padding-bottom:0}
+.rcard-thumb{width:55px;height:88px;object-fit:cover;border-radius:5px;border:1.5px solid var(--gold);flex-shrink:0}
+.rcard-content{flex:1}
+.reading-card-name{color:var(--gold2);font-weight:600;font-size:.88rem;margin-bottom:.2rem}
+.reading-pos{color:var(--muted);font-size:.74rem;margin-bottom:.35rem}
+.reading-text{font-size:.88rem;line-height:1.7}
+.reading-summary{background:rgba(201,168,76,.07);border-left:3px solid var(--gold);padding:.7rem .9rem;border-radius:0 8px 8px 0;margin-top:.9rem;font-size:.88rem;line-height:1.7}
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.72);z-index:200;display:flex;align-items:center;justify-content:center;padding:1rem}
+.modal{background:linear-gradient(135deg,#1a0a2e,#2d1b4e);border:1px solid var(--gold);border-radius:14px;max-width:400px;width:100%;max-height:85vh;overflow-y:auto;padding:1.3rem}
+.modal img{width:120px;height:192px;object-fit:cover;border-radius:9px;border:2px solid var(--gold);display:block;margin:0 auto .9rem}
+.modal-name{color:var(--gold);font-family:'Cinzel',serif;font-size:1rem;text-align:center;margin-bottom:.25rem}
+.modal-suit{color:var(--muted);font-size:.76rem;text-align:center;margin-bottom:.7rem}
+.modal-meaning{font-size:.88rem;line-height:1.7}
+.ldots{display:inline-flex;gap:3px;margin-left:4px}
+.ldots span{width:5px;height:5px;border-radius:50%;background:var(--gold);animation:dbounce .55s ease-in-out infinite}
+.ldots span:nth-child(2){animation-delay:.1s}.ldots span:nth-child(3){animation-delay:.2s}
+@keyframes dbounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-5px)}}
+.slot-progress{display:flex;gap:4px;justify-content:center;flex-wrap:wrap;margin:.4rem 0}
+.sp-dot{width:8px;height:8px;border-radius:50%;border:1px solid var(--gold);background:transparent;transition:background .3s}
+.sp-dot.filled{background:var(--gold)}.sp-dot.sp-active{background:rgba(201,168,76,.4);box-shadow:0 0 6px var(--gold)}
+.hint-box{text-align:center;padding:.5rem;background:rgba(201,168,76,.06);border-radius:8px;font-size:.8rem;color:var(--muted);margin:.4rem 0}
+.hint-box span{color:var(--gold)}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script>
+const CARDS = {"0": {"index": 0, "name": "The Fool", "name_th": "The Fool — คนโง่เขลา", "suit": "Major Arcana", "img": "Asset/cards/Major_Arcana/The_Fool.png", "meaning_th": "จุดเริ่มต้นใหม่ การผจญภัย ความไร้เดียงสา พลังงานบริสุทธิ์ ก้าวกระโดดแห่งศรัทธา ถึงเวลาเริ่มสิ่งใหม่ด้วยใจที่เปิดกว้างค่ะ จักรวาลกำลังเชิญให้คุณก้าวออกจากกรอบเดิม อย่ากลัวความไม่แน่นอน เพราะทุกการเดินทางยิ่งใหญ่เริ่มจากก้าวแรกเสมอค่ะ", "is_major": true}, "1": {"index": 1, "name": "The Magician", "name_th": "The Magician — นักมายากล", "suit": "Major Arcana", "img": "Asset/cards/Major_Arcana/The_Magician.png", "meaning_th": "พลังงาน ความสามารถ เจตจำนง ทักษะครบครัน คุณมีทุกสิ่งที่ต้องการอยู่แล้วค่ะ ถึงเวลาลงมือทำ เปลี่ยนความฝันให้เป็นความจริง พลังของจักรวาลพร้อมทำงานผ่านมือคุณค่ะ", "is_major": true}, "2": {"index": 2, "name": "The High Priestess", "name_th": "The High Priestess — นักบวชหญิง", "suit": "Major Arcana", "img": "Asset/cards/Major_Arcana/The_High_Priestess.png", "meaning_th": "ปัญญาภายใน สัญชาตญาณ ความลึกลับ รอจังหวะที่เหมาะ ฟังเสียงภายในตัวเองค่ะ คำตอบที่คุณหาอยู่นั้นซ่อนอยู่ในส่วนลึกของจิตใจคุณเอง อย่ารีบร้อนตัดสินใจค่ะ", "is_major": true}, "3": {"index": 3, "name": "The Empress", "name_th": "The Empress — จักรพรรดินี", "suit": "Major Arcana", "img": "Asset/cards/Major_Arcana/The_Empress.png", "meaning_th": "ความอุดมสมบูรณ์ ความรัก ธรรมชาติ ความเจริญงอกงาม พลังงานแม่ ช่วงเวลาแห่งความเจริญรุ่งเรืองกำลังมาถึงค่ะ ดูแลตัวเอง รักตัวเอง และปล่อยให้ความงามของชีวิตผลิบานค่ะ", "is_major": true}, "4": {"index": 4, "name": "The Emperor", "name_th": "The Emperor — จักรพรรดิ", "suit": "Major Arcana", "img": "Asset/cards/Major_Arcana/The_Emperor.png", "meaning_th": "อำนาจ ระเบียบ โครงสร้าง ความมั่นคง ผู้นำ ถึงเวลาวางรากฐานที่แข็งแกร่งค่ะ ตัดสินใจด้วยหัวไม่ใช่แค่หัวใจ และสร้างระเบียบในชีวิตของคุณค่ะ", "is_major": true}, "5": {"index": 5, "name": "The Hierophant", "name_th": "The Hierophant — นักบวชชาย", "suit": "Major Arcana", "img": "Asset/cards/Major_Arcana/The_Hierophant.png", "meaning_th": "ประเพณี ความเชื่อ การศึกษา ที่ปรึกษา หันหาภูมิปัญญาดั้งเดิมหรือขอคำแนะนำจากผู้ที่เชี่ยวชาญค่ะ บางครั้งเส้นทางที่ถูกต้องคือเส้นทางที่ผู้อื่นพิสูจน์แล้วค่ะ", "is_major": true}, "6": {"index": 6, "name": "The Lovers", "name_th": "The Lovers — คู่รัก", "suit": "Major Arcana", "img": "Asset/cards/Major_Arcana/The_Lovers.png", "meaning_th": "ความรัก ความสัมพันธ์ การเลือก ความสามัคคี หัวใจกำลังบอกทิศทางค่ะ ไม่ว่าจะเป็นเรื่องความรักหรือการตัดสินใจครั้งสำคัญ จงเลือกจากใจที่แท้จริงค่ะ", "is_major": true}, "7": {"index": 7, "name": "The Chariot", "name_th": "The Chariot — รถศึก", "suit": "Major Arcana", "img": "Asset/cards/Major_Arcana/The_Chariot.png", "meaning_th": "ชัยชนะ ความมุ่งมั่น การควบคุม พลังใจ คุณมีพลังที่จะเอาชนะทุกอุปสรรคค่ะ รวบรวมพลังใจ โฟกัสที่เป้าหมาย และมุ่งหน้าไปอย่างไม่หยุดยั้งค่ะ", "is_major": true}, "8": {"index": 8, "name": "Strength", "name_th": "Strength — ความแข็งแกร่ง", "suit": "Major Arcana", "img": "Asset/cards/Major_Arcana/Strength.png", "meaning_th": "ความอดทน ความกล้า ความเมตตา ชนะด้วยใจ ไม่ใช่กำลัง พลังที่แท้จริงมาจากข้างในค่ะ ไม่ต้องบังคับหรือกดขี่ แต่จงใช้ความรักและความเมตตานำทางค่ะ", "is_major": true}, "9": {"index": 9, "name": "The Hermit", "name_th": "The Hermit — ฤาษี", "suit": "Major Arcana", "img": "Asset/cards/Major_Arcana/The_Hermit.png", "meaning_th": "ความสงบ การไตร่ตรอง ปัญญา โดดเดี่ยวเพื่อค้นหาตัวเอง ถึงเวลาถอยออกมาค่ะ สงบใจ ทบทวนตัวเอง คำตอบที่หาอยู่จะพบได้ในความเงียบค่ะ", "is_major": true}, "10": {"index": 10, "name": "Wheel of Fortune", "name_th": "Wheel of Fortune — วงล้อแห่งโชคชะตา", "suit": "Major Arcana", "img": "Asset/cards/Major_Arcana/The_Wheel_of_Fortune_.png", "meaning_th": "การเปลี่ยนแปลง วัฏจักร โชคดี จังหวะ วงล้อกำลังหมุนค่ะ โชคดีกำลังเข้ามาหาคุณ จงเปิดรับโอกาสใหม่ที่กำลังมาถึงค่ะ", "is_major": true}, "11": {"index": 11, "name": "Justice", "name_th": "Justice — ความยุติธรรม", "suit": "Major Arcana", "img": "Asset/cards/Major_Arcana/Justice.png", "meaning_th": "ความยุติธรรม สมดุล กฎหมาย ความซื่อสัตย์ ทุกสิ่งจะได้รับความยุติธรรมในที่สุดค่ะ ทำในสิ่งที่ถูกต้อง และจักรวาลจะตอบแทนค่ะ", "is_major": true}, "12": {"index": 12, "name": "The Hanged Man", "name_th": "The Hanged Man — ชายถูกแขวน", "suit": "Major Arcana", "img": "Asset/cards/Major_Arcana/The_Hanged_Man.png", "meaning_th": "การยอมรับ มุมมองใหม่ การรอคอย การปล่อยวาง หยุดดิ้น มองปัญหาจากมุมใหม่ค่ะ บางครั้งการยอมแพ้ชั่วคราวคือทางออกที่ดีที่สุดค่ะ", "is_major": true}, "13": {"index": 13, "name": "Death", "name_th": "Death — ความตาย", "suit": "Major Arcana", "img": "Asset/cards/Major_Arcana/Death.png", "meaning_th": "การเปลี่ยนแปลงครั้งใหญ่ การสิ้นสุด การเริ่มต้นใหม่ การเปลี่ยนแปลง ไพ่นี้ไม่ได้หมายถึงความตายค่ะ แต่หมายถึงบทเก่ากำลังจบลงเพื่อเปิดทางให้บทใหม่ที่ดีกว่าค่ะ", "is_major": true}, "14": {"index": 14, "name": "Temperance", "name_th": "Temperance — ความพอดี", "suit": "Major Arcana", "img": "Asset/cards/Major_Arcana/Temperance.png", "meaning_th": "สมดุล ความอดทน การผสมผสาน ความพอดี จงหาจุดสมดุลในทุกด้านของชีวิตค่ะ ไม่มากไม่น้อยเกินไป ความพอดีคือกุญแจสู่ความสุขที่แท้จริงค่ะ", "is_major": true}, "15": {"index": 15, "name": "The Devil", "name_th": "The Devil — ปีศาจ", "suit": "Major Arcana", "img": "Asset/cards/Major_Arcana/The_Devil.png", "meaning_th": "ความผูกพัน ความหลง ความกลัว สิ่งที่กดขี่ มีบางสิ่งกำลังยึดคุณไว้ค่ะ จงตรวจสอบว่ามีความกลัวหรือนิสัยไม่ดีอะไรที่ต้องปลดปล่อยออกไปค่ะ", "is_major": true}, "16": {"index": 16, "name": "The Tower", "name_th": "The Tower — หอคอย", "suit": "Major Arcana", "img": "Asset/cards/Major_Arcana/The_Tower.png", "meaning_th": "การพังทลาย การเปลี่ยนแปลงกะทันหัน ความจริงที่เปิดเผย แม้จะดูน่ากลัว แต่สิ่งที่พังทลายคือสิ่งที่ไม่แข็งแรงพอค่ะ หลังพายุจะมีรุ้งเสมอค่ะ", "is_major": true}, "17": {"index": 17, "name": "The Star", "name_th": "The Star — ดวงดาว", "suit": "Major Arcana", "img": "Asset/cards/Major_Arcana/The_Star.png", "meaning_th": "ความหวัง การฟื้นฟู แรงบันดาลใจ ความเชื่อมั่น แสงสว่างกำลังปรากฏค่ะ ช่วงเวลาแห่งการฟื้นฟูและความหวังกำลังมาถึง จงเชื่อในตัวเองค่ะ", "is_major": true}, "18": {"index": 18, "name": "The Moon", "name_th": "The Moon — ดวงจันทร์", "suit": "Major Arcana", "img": "Asset/cards/Major_Arcana/The_Moon.png", "meaning_th": "ภาพลวงตา ความลึกลับ ความกลัว สัญชาตญาณ บางสิ่งไม่ชัดเจนนักค่ะ ระวังการหลอกลวงหรือความเข้าใจผิด ฟังสัญชาตญาณมากกว่าสิ่งที่เห็นค่ะ", "is_major": true}, "19": {"index": 19, "name": "The Sun", "name_th": "The Sun — ดวงอาทิตย์", "suit": "Major Arcana", "img": "Asset/cards/Major_Arcana/The_Sun.png", "meaning_th": "ความสุข ความสำเร็จ ชีวิตชีวา ความกระจ่างใส ช่วงเวลาแห่งความสุขและความสำเร็จกำลังมาถึงค่ะ พลังงานบวกกำลังล้อมรอบคุณ เปิดรับมันด้วยใจที่ยินดีค่ะ", "is_major": true}, "20": {"index": 20, "name": "Judgement", "name_th": "Judgement — การพิพากษา", "suit": "Major Arcana", "img": "Asset/cards/Major_Arcana/Judgement.png", "meaning_th": "การตื่นรู้ การเรียกสู่บทใหม่ การอภัย การฟื้นคืน เสียงแห่งจักรวาลกำลังเรียกคุณสู่ชีวิตใหม่ค่ะ ถึงเวลาอภัยตัวเองและผู้อื่น แล้วก้าวสู่บทใหม่อย่างเต็มภาคภูมิค่ะ", "is_major": true}, "21": {"index": 21, "name": "The World", "name_th": "The World — โลก", "suit": "Major Arcana", "img": "Asset/cards/Major_Arcana/The_World.png", "meaning_th": "ความสมบูรณ์ ความสำเร็จ การบรรลุ วัฏจักรครบสมบูรณ์ คุณอยู่ในจุดสูงสุดของวัฏจักรนี้ค่ะ ความสำเร็จ ความสมบูรณ์ และความสุขอยู่ในมือคุณแล้วค่ะ", "is_major": true}, "22": {"index": 22, "name": "Ace of Wands", "name_th": "Ace of Wands", "suit": "Wands", "img": "Asset/cards/Miner_Arcana/Wands/Ace_of_Wands.png", "meaning_th": "พลังงานสร้างสรรค์ใหม่ แรงบันดาลใจ จุดเริ่มต้นโครงการ ไฟแห่งความหลงใหล พลังงานใหม่กำลังลุกโชน ถึงเวลาเริ่มสิ่งที่คุณฝันไว้ค่ะ", "is_major": false}, "23": {"index": 23, "name": "Two of Wands", "name_th": "Two of Wands", "suit": "Wands", "img": "Asset/cards/Miner_Arcana/Wands/Two_of_Wands.png", "meaning_th": "การวางแผน การมองการณ์ไกล การตัดสินใจ การรอผล คุณกำลังอยู่ที่จุดแยกทาง มองการณ์ไกลและเลือกเส้นทางที่ใช่ค่ะ", "is_major": false}, "24": {"index": 24, "name": "Three of Wands", "name_th": "Three of Wands", "suit": "Wands", "img": "Asset/cards/Miner_Arcana/Wands/Three_of_Wands.png", "meaning_th": "การขยายตัว วิสัยทัศน์ โอกาสต่างประเทศ ความก้าวหน้า ขอบฟ้าใหม่กำลังเปิดออกค่ะ ระยะเวลาแห่งการขยายตัวและความก้าวหน้ากำลังมาถึงค่ะ", "is_major": false}, "25": {"index": 25, "name": "Four of Wands", "name_th": "Four of Wands", "suit": "Wands", "img": "Asset/cards/Miner_Arcana/Wands/Four_of_Wands.png", "meaning_th": "การเฉลิมฉลอง ความมั่นคง บ้าน ชุมชน ช่วงเวลาแห่งความสุขและการเฉลิมฉลองค่ะ สิ่งที่ทำมาอย่างหนักกำลังให้ผลค่ะ", "is_major": false}, "26": {"index": 26, "name": "Five of Wands", "name_th": "Five of Wands", "suit": "Wands", "img": "Asset/cards/Miner_Arcana/Wands/Five_of_Wands.png", "meaning_th": "ความขัดแย้ง การแข่งขัน ความไม่เห็นด้วย พลังงานวุ่นวาย มีความขัดแย้งรอบตัวค่ะ แต่ถ้าจัดการได้ดี มันจะเป็นแรงผลักดันสู่ความสำเร็จค่ะ", "is_major": false}, "27": {"index": 27, "name": "Six of Wands", "name_th": "Six of Wands", "suit": "Wands", "img": "Asset/cards/Miner_Arcana/Wands/Six_of_Wands.png", "meaning_th": "ชัยชนะ การยอมรับ ความสำเร็จสาธารณะ ความภาคภูมิใจ ชัยชนะอยู่ตรงหน้าค่ะ ความพยายามของคุณกำลังได้รับการยอมรับค่ะ", "is_major": false}, "28": {"index": 28, "name": "Seven of Wands", "name_th": "Seven of Wands", "suit": "Wands", "img": "Asset/cards/Miner_Arcana/Wands/Seven_of_Wands.png", "meaning_th": "การป้องกัน ความมุ่งมั่น การยืนหยัด ต่อต้านความกดดัน ยืนหยัดในสิ่งที่เชื่อค่ะ แม้จะมีแรงต้าน คุณมีพลังพอที่จะชนะค่ะ", "is_major": false}, "29": {"index": 29, "name": "Eight of Wands", "name_th": "Eight of Wands", "suit": "Wands", "img": "Asset/cards/Miner_Arcana/Wands/Eight_of_Wands.png", "meaning_th": "ความรวดเร็ว ข่าวสาร การเดินทาง พลังงานเร็ว สิ่งต่างๆ กำลังเคลื่อนที่เร็วมากค่ะ เตรียมรับข่าวดีหรือการเปลี่ยนแปลงที่รวดเร็วค่ะ", "is_major": false}, "30": {"index": 30, "name": "Nine of Wands", "name_th": "Nine of Wands", "suit": "Wands", "img": "Asset/cards/Miner_Arcana/Wands/Nine_of_Wands.png", "meaning_th": "ความอดทน ความระวัง ความแข็งแกร่ง เกือบถึงแล้ว อย่าท้อแท้ค่ะ คุณผ่านมามากแล้ว ก้าวสุดท้ายแห่งความสำเร็จอยู่ตรงหน้าค่ะ", "is_major": false}, "31": {"index": 31, "name": "Ten of Wands", "name_th": "Ten of Wands", "suit": "Wands", "img": "Asset/cards/Miner_Arcana/Wands/Ten_of_Wands.png", "meaning_th": "ภาระหนัก ความรับผิดชอบมากเกิน ความเหนื่อยล้า ถึงเวลาปล่อยวางบางอย่างค่ะ คุณแบกรับมากเกินไป ขอความช่วยเหลือหรือมอบหมายงานบ้างค่ะ", "is_major": false}, "32": {"index": 32, "name": "Page of Wands", "name_th": "Page of Wands", "suit": "Wands", "img": "Asset/cards/Miner_Arcana/Wands/Page_of_Wands.png", "meaning_th": "ความกระตือรือร้น ข่าวสาร การเริ่มต้นใหม่ ผู้ส่งสาร พลังงานใหม่และโอกาสกำลังมาค่ะ เปิดรับข่าวสารหรือแนวคิดใหม่ๆ ค่ะ", "is_major": false}, "33": {"index": 33, "name": "Knight of Wands", "name_th": "Knight of Wands", "suit": "Wands", "img": "Asset/cards/Miner_Arcana/Wands/Knight_of_Wands.png", "meaning_th": "ความกล้า พลังงาน การผจญภัย การเคลื่อนไหวเร็ว พลังงานไฟกำลังลุกโชน ลงมือทำด้วยความกล้าและกระตือรือร้นค่ะ", "is_major": false}, "34": {"index": 34, "name": "Queen of Wands", "name_th": "Queen of Wands", "suit": "Wands", "img": "Asset/cards/Miner_Arcana/Wands/Queen_of_Wands.png", "meaning_th": "ความมั่นใจ ความคิดสร้างสรรค์ ความอบอุ่น ผู้นำ คุณมีเสน่ห์และพลังงานที่ดึงดูดผู้อื่นค่ะ ใช้ความมั่นใจและความคิดสร้างสรรค์ขับเคลื่อนชีวิตค่ะ", "is_major": false}, "35": {"index": 35, "name": "King of Wands", "name_th": "King of Wands", "suit": "Wands", "img": "Asset/cards/Miner_Arcana/Wands/King_of_Wands.png", "meaning_th": "วิสัยทัศน์ ความเป็นผู้นำ แรงบันดาลใจ ความสำเร็จ ผู้นำที่แท้จริงกำลังปรากฏ ถึงเวลาแสดงวิสัยทัศน์และนำผู้อื่นค่ะ", "is_major": false}, "36": {"index": 36, "name": "Ace of Cups", "name_th": "Ace of Cups", "suit": "Cups", "img": "Asset/cards/Miner_Arcana/Cups/Ace_of_Cups.png", "meaning_th": "ความรัก อารมณ์ความรู้สึกใหม่ การเริ่มต้นความสัมพันธ์ ความเมตตา หัวใจกำลังเปิดรับสิ่งใหม่ค่ะ ความรักและอารมณ์ที่ลึกซึ้งกำลังไหลเข้ามาค่ะ", "is_major": false}, "37": {"index": 37, "name": "Two of Cups", "name_th": "Two of Cups", "suit": "Cups", "img": "Asset/cards/Miner_Arcana/Cups/Two_of_Cups.png", "meaning_th": "ความรัก ความสัมพันธ์ การเชื่อมโยง ความสมดุลของหัวใจ ความรักที่แท้จริงกำลังปรากฏค่ะ การเชื่อมโยงที่ลึกซึ้งกำลังเกิดขึ้นค่ะ", "is_major": false}, "38": {"index": 38, "name": "Three of Cups", "name_th": "Three of Cups", "suit": "Cups", "img": "Asset/cards/Miner_Arcana/Cups/Three_of_Cups.png", "meaning_th": "การเฉลิมฉลอง มิตรภาพ ชุมชน ความสุขร่วมกัน เวลาแห่งการเฉลิมฉลองกับคนที่รักค่ะ ความสุขจะทวีคูณเมื่อแบ่งปันค่ะ", "is_major": false}, "39": {"index": 39, "name": "Four of Cups", "name_th": "Four of Cups", "suit": "Cups", "img": "Asset/cards/Miner_Arcana/Cups/Four_of_Cups.png", "meaning_th": "ความเบื่อหน่าย การพิจารณา ความไม่พอใจ มองข้ามโอกาส บางทีคุณอาจมองข้ามโอกาสดีที่อยู่ตรงหน้าค่ะ ลองเปิดใจรับสิ่งที่จักรวาลกำลังส่งมาค่ะ", "is_major": false}, "40": {"index": 40, "name": "Five of Cups", "name_th": "Five of Cups", "suit": "Cups", "img": "Asset/cards/Miner_Arcana/Cups/Five_of_Cups.png", "meaning_th": "ความเสียใจ การสูญเสีย ความผิดหวัง แต่ยังมีสิ่งดีเหลืออยู่ อย่าจมอยู่กับความเจ็บปวดค่ะ ยังมีสิ่งดีๆ เหลืออยู่มากมายที่รอคุณอยู่ค่ะ", "is_major": false}, "41": {"index": 41, "name": "Six of Cups", "name_th": "Six of Cups", "suit": "Cups", "img": "Asset/cards/Miner_Arcana/Cups/Six_of_Cups.png", "meaning_th": "ความทรงจำ อดีต ความบริสุทธิ์ของเด็ก ของขวัญจากอดีต ความทรงจำที่ดีกำลังปรากฏขึ้นค่ะ บทเรียนจากอดีตจะช่วยชี้ทางในปัจจุบันค่ะ", "is_major": false}, "42": {"index": 42, "name": "Seven of Cups", "name_th": "Seven of Cups", "suit": "Cups", "img": "Asset/cards/Miner_Arcana/Cups/Seven_of_Cups.png", "meaning_th": "ความฝัน ภาพลวงตา ทางเลือกมากมาย ความสับสน มีทางเลือกมากเกินไปค่ะ ถึงเวลาใช้สติกรองความฝันออกจากความจริงค่ะ", "is_major": false}, "43": {"index": 43, "name": "Eight of Cups", "name_th": "Eight of Cups", "suit": "Cups", "img": "Asset/cards/Miner_Arcana/Cups/Eight_of_Cups.png", "meaning_th": "การออกเดินทาง การทิ้งสิ่งที่ไม่ให้ประโยชน์ การค้นหาความหมาย ถึงเวลาปล่อยวางสิ่งที่ไม่เติมเต็มหัวใจค่ะ ออกเดินทางสู่สิ่งที่ดีกว่าค่ะ", "is_major": false}, "44": {"index": 44, "name": "Nine of Cups", "name_th": "Nine of Cups", "suit": "Cups", "img": "Asset/cards/Miner_Arcana/Cups/Nine_of_Cups.png", "meaning_th": "ความพึงพอใจ ความปรารถนาที่สมหวัง ความสุข ความฝันกำลังเป็นจริงค่ะ ช่วงเวลาแห่งความสุขและความพึงพอใจกำลังมาถึงค่ะ", "is_major": false}, "45": {"index": 45, "name": "Ten of Cups", "name_th": "Ten of Cups", "suit": "Cups", "img": "Asset/cards/Miner_Arcana/Cups/Ten_of_Cups.png", "meaning_th": "ความสุขในครอบครัว ความสมหวังทางอารมณ์ ความสงบสุข ความรักนิรันดร์ ความสุขที่แท้จริงอยู่ในความสัมพันธ์กับคนที่รักค่ะ", "is_major": false}, "46": {"index": 46, "name": "Page of Cups", "name_th": "Page of Cups", "suit": "Cups", "img": "Asset/cards/Miner_Arcana/Cups/Page_of_Cups.png", "meaning_th": "ข่าวดีทางอารมณ์ ความคิดสร้างสรรค์ สัญชาตญาณ ความไร้เดียงสา ข่าวดีเกี่ยวกับความรักหรืออารมณ์กำลังมาค่ะ เปิดใจรับค่ะ", "is_major": false}, "47": {"index": 47, "name": "Knight of Cups", "name_th": "Knight of Cups", "suit": "Cups", "img": "Asset/cards/Miner_Arcana/Cups/Knight_of_Cups.png", "meaning_th": "ความโรแมนติก ความฝัน การเดินทางทางอารมณ์ อัศวินแห่งหัวใจ คนหรือโอกาสแห่งความรักกำลังเข้ามาค่ะ เปิดใจรับมันค่ะ", "is_major": false}, "48": {"index": 48, "name": "Queen of Cups", "name_th": "Queen of Cups", "suit": "Cups", "img": "Asset/cards/Miner_Arcana/Cups/Queen_of_Cups.png", "meaning_th": "ความเมตตา สัญชาตญาณ ความเห็นอกเห็นใจ ปัญญาทางอารมณ์ ฟังสัญชาตญาณและหัวใจค่ะ ความเมตตาของคุณคือพลังที่ยิ่งใหญ่ที่สุดค่ะ", "is_major": false}, "49": {"index": 49, "name": "King of Cups", "name_th": "King of Cups", "suit": "Cups", "img": "Asset/cards/Miner_Arcana/Cups/King_of_Cups.png", "meaning_th": "ความสมดุลทางอารมณ์ ปัญญา ความเมตตา ผู้นำด้วยใจ จัดการอารมณ์ด้วยปัญญาค่ะ ความสมดุลระหว่างหัวใจและสติปัญญาคือกุญแจค่ะ", "is_major": false}, "50": {"index": 50, "name": "Ace of Swords", "name_th": "Ace of Swords", "suit": "Swords", "img": "Asset/cards/Miner_Arcana/Swords/Ace_of_Swords.png", "meaning_th": "ความชัดเจน ความจริง การตัดสินใจ การเริ่มต้นใหม่ด้วยสติ ความจริงกำลังปรากฏชัดค่ะ ความคิดที่ชัดเจนจะพาคุณผ่านอุปสรรคได้ค่ะ", "is_major": false}, "51": {"index": 51, "name": "Two of Swords", "name_th": "Two of Swords", "suit": "Swords", "img": "Asset/cards/Miner_Arcana/Swords/Two_of_Swords.png", "meaning_th": "ความลังเล การหลีกเลี่ยง การตัดสินใจที่ยาก สภาวะชั่วคราว ถึงเวลาตัดสินใจค่ะ การผัดวันประกันพรุ่งจะทำให้สถานการณ์ยิ่งยากขึ้นค่ะ", "is_major": false}, "52": {"index": 52, "name": "Three of Swords", "name_th": "Three of Swords", "suit": "Swords", "img": "Asset/cards/Miner_Arcana/Swords/Three_of_Swords.png", "meaning_th": "ความเจ็บปวด การสูญเสีย ความเสียใจ แต่จะผ่านไป ความเจ็บปวดนี้เป็นชั่วคราวค่ะ หลังจากผ่านมันไปคุณจะแข็งแกร่งขึ้นมากค่ะ", "is_major": false}, "53": {"index": 53, "name": "Four of Swords", "name_th": "Four of Swords", "suit": "Swords", "img": "Asset/cards/Miner_Arcana/Swords/Four_of_Swords.png", "meaning_th": "การพักผ่อน การฟื้นฟู ความสงบ การสะสมพลัง ถึงเวลาพักค่ะ ร่างกายและจิตใจต้องการการฟื้นฟูก่อนจะก้าวต่อไปค่ะ", "is_major": false}, "54": {"index": 54, "name": "Five of Swords", "name_th": "Five of Swords", "suit": "Swords", "img": "Asset/cards/Miner_Arcana/Swords/Five_of_Swords.png", "meaning_th": "ความขัดแย้ง การพ่ายแพ้ การไม่ซื่อสัตย์ ความสูญเสีย บางครั้งการยอมแพ้คือการชนะที่ชาญฉลาดที่สุดค่ะ อย่าหลงยึดติดกับชัยชนะที่ไม่มีความหมายค่ะ", "is_major": false}, "55": {"index": 55, "name": "Six of Swords", "name_th": "Six of Swords", "suit": "Swords", "img": "Asset/cards/Miner_Arcana/Swords/Six_of_Swords.png", "meaning_th": "การเปลี่ยนผ่าน การเดินทาง การหนีจากความวุ่นวาย ความสงบที่กำลังมา กำลังเคลื่อนออกจากช่วงเวลาที่ยากค่ะ ข้างหน้าสงบกว่าค่ะ", "is_major": false}, "56": {"index": 56, "name": "Seven of Swords", "name_th": "Seven of Swords", "suit": "Swords", "img": "Asset/cards/Miner_Arcana/Swords/seven_of_Swords.png", "meaning_th": "การหลอกลวง ความลับ กลยุทธ์ การหลบเลี่ยง ระวังการหลอกลวงรอบตัวค่ะ หรือคุณเองกำลังหลบเลี่ยงบางสิ่งที่ต้องเผชิญค่ะ", "is_major": false}, "57": {"index": 57, "name": "Eight of Swords", "name_th": "Eight of Swords", "suit": "Swords", "img": "Asset/cards/Miner_Arcana/Swords/Eight_of_Swords.png", "meaning_th": "ความรู้สึกติดกับ ข้อจำกัดในใจ กลัวเกินจริง แต่ทางออกมีอยู่ คุณไม่ได้ถูกจองจำจริงค่ะ ข้อจำกัดอยู่ในความคิดของคุณเอง ลองมองมุมใหม่ค่ะ", "is_major": false}, "58": {"index": 58, "name": "Nine of Swords", "name_th": "Nine of Swords", "suit": "Swords", "img": "Asset/cards/Miner_Arcana/Swords/Nine_of_Swords.png", "meaning_th": "ความวิตกกังวล ฝันร้าย ความกลัว แต่สิ่งที่กลัวมักไม่เกิดขึ้นจริง ความกังวลที่คุณรู้สึกอยู่มักใหญ่กว่าความเป็นจริงค่ะ หายใจลึกๆ แล้วเผชิญทีละก้าวค่ะ", "is_major": false}, "59": {"index": 59, "name": "Ten of Swords", "name_th": "Ten of Swords", "suit": "Swords", "img": "Asset/cards/Miner_Arcana/Swords/Ten_of_Swords.png", "meaning_th": "การสิ้นสุด ความพ่ายแพ้ แต่นี่คือจุดต่ำสุด จากนี้ขึ้นได้อย่างเดียว วัฏจักรนี้กำลังจบสิ้นค่ะ แม้จะเจ็บปวด แต่หลังจากนี้จะดีขึ้นเสมอค่ะ", "is_major": false}, "60": {"index": 60, "name": "Page of Swords", "name_th": "Page of Swords", "suit": "Swords", "img": "Asset/cards/Miner_Arcana/Swords/Page_of_Swords.png", "meaning_th": "ความอยากรู้ ข่าวสาร ความคิดคมคาย ความกระตือรือร้น ข่าวหรือไอเดียใหม่กำลังมาค่ะ ใช้สติปัญญาในการรับมือกับมันค่ะ", "is_major": false}, "61": {"index": 61, "name": "Knight of Swords", "name_th": "Knight of Swords", "suit": "Swords", "img": "Asset/cards/Miner_Arcana/Swords/Knight_of_Swords.png", "meaning_th": "ความรวดเร็ว ความตรงไปตรงมา ความมุ่งมั่น แต่ระวังความหุนหันพลันแล่น ลงมือเร็วแต่ต้องคิดให้รอบคอบก่อนค่ะ ความเร็วที่ไม่มีทิศทางจะพาหลงทางค่ะ", "is_major": false}, "62": {"index": 62, "name": "Queen of Swords", "name_th": "Queen of Swords", "suit": "Swords", "img": "Asset/cards/Miner_Arcana/Swords/Queen_of_Swords.png", "meaning_th": "ความเป็นอิสระ ปัญญาคมคาย การสื่อสารตรงไปตรงมา ใช้ความคิดที่ชัดเจนและตรงไปตรงมาค่ะ อย่าให้อารมณ์มาบดบังสติปัญญาค่ะ", "is_major": false}, "63": {"index": 63, "name": "King of Swords", "name_th": "King of Swords", "suit": "Swords", "img": "Asset/cards/Miner_Arcana/Swords/King_of_Swords.png", "meaning_th": "ผู้มีอำนาจ ปัญญา ความยุติธรรม ความเป็นผู้นำ ตัดสินใจด้วยหลักการและเหตุผลค่ะ ความเป็นธรรมและสติปัญญาคือพลังของคุณค่ะ", "is_major": false}, "64": {"index": 64, "name": "Ace of Pentacles", "name_th": "Ace of Pentacles", "suit": "Pentacles", "img": "Asset/cards/Miner_Arcana/Pentacles/Ace_of_Pentacles.png", "meaning_th": "โอกาสทางการเงิน ความมั่นคง จุดเริ่มต้นทางวัตถุ ความเจริญรุ่งเรือง โอกาสใหม่ทางการเงินหรืออาชีพกำลังมาค่ะ คว้าไว้ค่ะ", "is_major": false}, "65": {"index": 65, "name": "Two of Pentacles", "name_th": "Two of Pentacles", "suit": "Pentacles", "img": "Asset/cards/Miner_Arcana/Pentacles/Two_of_Pentacles.png", "meaning_th": "การจัดสมดุล การปรับตัว ความยืดหยุ่น จัดการหลายสิ่งพร้อมกัน ถึงเวลาจัดระเบียบชีวิตค่ะ บาลานซ์ทุกด้านให้ดีค่ะ", "is_major": false}, "66": {"index": 66, "name": "Three of Pentacles", "name_th": "Three of Pentacles", "suit": "Pentacles", "img": "Asset/cards/Miner_Arcana/Pentacles/Three_of_Pentacles.png", "meaning_th": "ทีมงาน ทักษะ การร่วมมือ คุณภาพ ทำงานร่วมกับผู้อื่นจะให้ผลลัพธ์ที่ดีที่สุดค่ะ ทักษะของคุณได้รับการยอมรับค่ะ", "is_major": false}, "67": {"index": 67, "name": "Four of Pentacles", "name_th": "Four of Pentacles", "suit": "Pentacles", "img": "Asset/cards/Miner_Arcana/Pentacles/Four_of_Pentacles.png", "meaning_th": "ความมั่นคง การออมทรัพย์ แต่ระวังความตระหนี่ ปล่อยวางบ้าง ดูแลความมั่นคงทางการเงินดีค่ะ แต่อย่าปล่อยให้ความกลัวทำให้ตระหนี่จนเกินค่ะ", "is_major": false}, "68": {"index": 68, "name": "Five of Pentacles", "name_th": "Five of Pentacles", "suit": "Pentacles", "img": "Asset/cards/Miner_Arcana/Pentacles/Five_of_Pentacles.png", "meaning_th": "ความลำบาก การสูญเสียทางการเงิน ความโดดเดี่ยว แต่ความช่วยเหลืออยู่ใกล้ ช่วงยากแต่ไม่ใช่ตลอดไปค่ะ ขอความช่วยเหลือได้ค่ะ", "is_major": false}, "69": {"index": 69, "name": "Six of Pentacles", "name_th": "Six of Pentacles", "suit": "Pentacles", "img": "Asset/cards/Miner_Arcana/Pentacles/Six_of_Pentacles.png", "meaning_th": "การให้และรับ ความเอื้อเฟื้อ ความสมดุลทางการเงิน บัดนี้คือเวลาแห่งการแบ่งปันค่ะ ความเอื้อเฟื้อจะไหลกลับมาหาคุณค่ะ", "is_major": false}, "70": {"index": 70, "name": "Seven of Pentacles", "name_th": "Seven of Pentacles", "suit": "Pentacles", "img": "Asset/cards/Miner_Arcana/Pentacles/Seven_of_Pentacles.png", "meaning_th": "ความอดทน การประเมินผล การลงทุนระยะยาว ยังอีกนาน แต่กำลังเติบโต สิ่งที่ทำอยู่ต้องการเวลาค่ะ อดทนรอค่ะ ผลลัพธ์ที่ดีกำลังค่อยๆ เติบโตค่ะ", "is_major": false}, "71": {"index": 71, "name": "Eight of Pentacles", "name_th": "Eight of Pentacles", "suit": "Pentacles", "img": "Asset/cards/Miner_Arcana/Pentacles/Eight_of_Pentacles.png", "meaning_th": "ทักษะ ความขยัน การพัฒนาตัวเอง ความสำเร็จจากความพยายาม ฝึกฝนและพัฒนาทักษะต่อไปค่ะ ความขยันอุตสาหะจะให้ผลตอบแทนค่ะ", "is_major": false}, "72": {"index": 72, "name": "Nine of Pentacles", "name_th": "Nine of Pentacles", "suit": "Pentacles", "img": "Asset/cards/Miner_Arcana/Pentacles/Nine_of_Pentacles.png", "meaning_th": "ความอุดมสมบูรณ์ ความเป็นอิสระ ผลของความพยายาม ความสำเร็จส่วนตัว คุณได้สร้างบางสิ่งที่มีคุณค่าค่ะ เพลิดเพลินกับผลของความพยายามค่ะ", "is_major": false}, "73": {"index": 73, "name": "Ten of Pentacles", "name_th": "Ten of Pentacles", "suit": "Pentacles", "img": "Asset/cards/Miner_Arcana/Pentacles/Ten_of_Pentacles.png", "meaning_th": "ความมั่งคั่ง ความมั่นคงของครอบครัว มรดก ความสำเร็จระยะยาว ความมั่นคงและความสุขในระยะยาวกำลังมาถึงค่ะ", "is_major": false}, "74": {"index": 74, "name": "Page of Pentacles", "name_th": "Page of Pentacles", "suit": "Pentacles", "img": "Asset/cards/Miner_Arcana/Pentacles/Page_of_Pentacles.png", "meaning_th": "การเรียนรู้ โอกาสใหม่ ความขยัน การวางแผน เวลาเรียนรู้สิ่งใหม่ค่ะ โอกาสทางการเงินหรืออาชีพกำลังเริ่มต้นค่ะ", "is_major": false}, "75": {"index": 75, "name": "Knight of Pentacles", "name_th": "Knight of Pentacles", "suit": "Pentacles", "img": "Asset/cards/Miner_Arcana/Pentacles/Knight_of_Pentacles.png", "meaning_th": "ความขยัน ความรับผิดชอบ ความมั่นคง ความอดทน ทำงานอย่างมีระบบและรับผิดชอบค่ะ ความพยายามอย่างสม่ำเสมอจะให้ผลค่ะ", "is_major": false}, "76": {"index": 76, "name": "Queen of Pentacles", "name_th": "Queen of Pentacles", "suit": "Pentacles", "img": "Asset/cards/Miner_Arcana/Pentacles/Queen_of_Pentacles.png", "meaning_th": "ความอุดมสมบูรณ์ ความเป็นแม่บ้าน การดูแล ความมั่นคง ดูแลตัวเองและคนที่รักค่ะ ความมั่นคงและความอบอุ่นคือพลังของคุณค่ะ", "is_major": false}, "77": {"index": 77, "name": "King of Pentacles", "name_th": "King of Pentacles", "suit": "Pentacles", "img": "Asset/cards/Miner_Arcana/Pentacles/King_of_Pentacles.png", "meaning_th": "ความมั่งคั่ง ความสำเร็จ ภาวะผู้นำทางธุรกิจ ความมั่นคง คุณมีทุกสิ่งที่ต้องการสร้างความมั่งคั่งค่ะ ใช้ปัญญาและประสบการณ์ขับเคลื่อนค่ะ", "is_major": false}};
+
+/* ── ALexia topic-aware reading ── */
+const TOPIC_SUIT_ADAPT = {
+  love:{
+    Cups:`ไพ่ Cups สอดคล้องกับด้านความรักโดยตรง — `,
+    Wands:`ในมิติความรัก ไพ่ Wands บ่งบอกถึงความหลงใหลและแรงดึงดูด — `,
+    Swords:`ในความสัมพันธ์ ไพ่ Swords ชี้ถึงการสื่อสารและการตัดสินใจที่สำคัญ — `,
+    Pentacles:`ในด้านความรัก ไพ่ Pentacles บ่งถึงความมั่นคงและความจริงจังในความสัมพันธ์ — `,
+    'Major Arcana':`ไพ่ Major Arcana นี้บ่งถึงพลังชะตากรรมและบทเรียนสำคัญในความรักค่ะ — `
+  },
+  career:{
+    Wands:`ไพ่ Wands สอดคล้องกับด้านการงาน บ่งถึงพลังสร้างสรรค์และความกระตือรือร้น — `,
+    Pentacles:`ไพ่ Pentacles มีพลังตรงกับด้านอาชีพและความมั่นคงในงาน — `,
+    Swords:`ในเรื่องการงาน ไพ่ Swords บ่งถึงการใช้สติปัญญาและการตัดสินใจที่ชัดเจน — `,
+    Cups:`ในด้านอาชีพ ไพ่ Cups ชี้ถึงความพึงพอใจในงานและความสัมพันธ์กับทีม — `,
+    'Major Arcana':`ไพ่ Major Arcana บ่งถึงเหตุการณ์สำคัญที่จะเปลี่ยนเส้นทางอาชีพของคุณ — `
+  },
+  money:{
+    Pentacles:`ไพ่ Pentacles มีพลังตรงกับด้านการเงินโดยตรง — `,
+    Wands:`ในด้านการเงิน ไพ่ Wands บ่งถึงโอกาสและพลังงานใหม่ที่เข้ามา — `,
+    Swords:`ในเรื่องเงิน ไพ่ Swords เตือนให้ระวังการตัดสินใจทางการเงินด้วยสติ — `,
+    Cups:`ในด้านการเงิน ไพ่ Cups สะท้อนทัศนคติและอารมณ์ที่มีต่อเงินของคุณ — `,
+    'Major Arcana':`ไพ่ Major Arcana บ่งถึงพลังจักรวาลที่ส่งผลต่อโชคลาภของคุณ — `
+  },
+  spiritual:{
+    'Major Arcana':`ไพ่ Major Arcana เป็นสัญญาณจักรวาลทรงพลังในเส้นทางจิตวิญญาณ — `,
+    Cups:`ไพ่ Cups เชื่อมกับความรู้สึกลึกๆ และพลังจิตใจของคุณ — `,
+    Wands:`ในด้านจิตวิญญาณ ไพ่ Wands บ่งถึงไฟแห่งการตื่นรู้และแรงบันดาลใจ — `,
+    Swords:`ไพ่ Swords ชี้ถึงการตัดสิ่งไม่จำเป็นออกเพื่อพัฒนาจิตใจ — `,
+    Pentacles:`ในด้านจิตวิญญาณ ไพ่ Pentacles สอนให้เชื่อมจิตใจกับโลกกายภาพอย่างสมดุล — `
+  },
+  free:{}
+};
+const POS_CONTEXTS={
+  'อดีต':'สิ่งนี้คือรากเหง้าและประสบการณ์ที่ผ่านมาซึ่งหล่อหลอมคุณจนถึงวันนี้ค่ะ',
+  'ปัจจุบัน':'นี่คือพลังงานที่ห้อมล้อมคุณอยู่ในขณะนี้ค่ะ',
+  'อนาคต':'นี่คือสิ่งที่กำลังจะเกิดขึ้นหากพลังงานดำเนินต่อไปในทิศทางนี้ค่ะ',
+  'ผลลัพธ์':'นี่คือแนวโน้มผลลัพธ์ที่รออยู่ข้างหน้าค่ะ',
+  'สถานการณ์':'นี่คือแก่นแท้ของสถานการณ์ที่คุณเผชิญอยู่ค่ะ',
+  'ความท้าทาย':'นี่คืออุปสรรคที่คุณต้องก้าวข้ามค่ะ',
+  'คำแนะนำ':'จักรวาลกำลังแนะนำทางออกให้คุณด้วยไพ่ใบนี้ค่ะ',
+  'รากเหง้า':'นี่คือสาเหตุแท้จริงที่ซ่อนอยู่เบื้องลึกค่ะ',
+  'ความหวัง':'ไพ่ใบนี้สะท้อนสิ่งที่อยู่ในใจของคุณลึกๆ ค่ะ',
+  'คำตอบ':'นี่คือคำตอบที่จักรวาลส่งมาให้คุณโดยตรงค่ะ',
+  'อุปสรรค':'สิ่งนี้คือสิ่งที่กีดขวางเส้นทางของคุณอยู่ค่ะ',
+  'คนรอบข้าง':'นี่คืออิทธิพลจากคนรอบข้างที่ส่งผลต่อสถานการณ์ค่ะ',
+  'อิทธิพล':'พลังงานซ่อนเร้นนี้ส่งผลต่อสถานการณ์อยู่เบื้องหลังค่ะ',
+  'ความเป็นไปได้':'นี่คือโอกาสและศักยภาพสูงสุดในเส้นทางนี้ค่ะ',
+  'ความคิด':'ไพ่ใบนี้สะท้อนความคิดและความรู้สึกภายในของคุณค่ะ',
+  'อดีตใกล้':'เหตุการณ์ที่เพิ่งผ่านพ้นได้ส่งผลมายังสถานการณ์ปัจจุบันค่ะ',
+};
+
+function getContextualMeaning(card,slotLabel,topic){
+  const adapt=TOPIC_SUIT_ADAPT[topic]||{};
+  const prefix=adapt[card.suit]||'';
+  let m=(card.meaning_th||'').trim();
+  if(m.endsWith('ค่ะ'))m=m.slice(0,-3).trim();
+  let posCtx='';
+  for(const[k,v] of Object.entries(POS_CONTEXTS)){if(slotLabel.includes(k)){posCtx=' '+v;break;}}
+  if(!posCtx)posCtx='ค่ะ';
+  let result=prefix+m+posCtx;
+  if(card.reversed)result+=' อย่างไรก็ตาม ไพ่กลับหัวบ่งชี้ว่าพลังงานนี้อาจยังไม่เต็มที่หรือกำลังถูกท้าทายอยู่ค่ะ';
+  return result;
+}
+
+function buildReading(spread,placed,topic,question){
+  const entries=spread.slots.map(s=>{
+    const c=placed[s.id];if(!c)return null;
+    return{slotId:s.id,pos:s.label,name:(c.reversed?'🔄 ':'')+(c.name_th||c.name),
+      img:c.img,isMajor:c.is_major,text:getContextualMeaning(c,s.label,topic)};
+  }).filter(Boolean);
+  const majors=entries.filter(e=>e.isMajor).length;
+  const tn={love:'ความรัก',career:'การงาน',money:'การเงิน',spiritual:'จิตวิญญาณ',free:''}[topic]||'';
+  let sum=`🌟 สรุปจากโซเฟีย${tn?'เกี่ยวกับ'+tn+'ของคุณ':''}ค่ะ — `;
+  if(majors>=3)sum+=`ไพ่ Major Arcana ปรากฏถึง ${majors} ใบ บ่งบอกว่าช่วงนี้เป็นช่วงเปลี่ยนแปลงสำคัญในชีวิตค่ะ `;
+  sum+='จักรวาลส่งพลังงานบวกให้คุณเสมอค่ะ จงเชื่อในตัวเองและก้าวต่อไปด้วยหัวใจที่มั่นคงค่ะ 💫';
+  return{entries,summary:sum};
+}
+
+/* ── PDF export via Canvas 2D (Thai renders natively) ── */
+function wrapText(ctx,text,maxW){
+  const lines=[];let line='';
+  for(let i=0;i<text.length;i++){
+    const t=line+text[i];
+    if(ctx.measureText(t).width>maxW&&line){lines.push(line);line=text[i];}
+    else line=t;
+  }
+  if(line)lines.push(line);
+  return lines;
+}
+
+/* ── Image loader: 3-method fallback (works on file:// + localhost) ── */
+async function imgToBase64(src){
+  const url=encodeURI(src); // encode spaces in paths like "Miner Arcana/..."
+
+  // Method 1: fetch → blob → FileReader (best; data: URL won't taint canvas)
+  try{
+    const r=await fetch(url,{cache:'force-cache'});if(!r.ok)throw 0;
+    const blob=await r.blob();
+    return await new Promise((res,rej)=>{
+      const fr=new FileReader();
+      fr.onload=()=>res(fr.result);fr.onerror=rej;
+      fr.readAsDataURL(blob);
+    });
+  }catch(_){}
+
+  // Method 2: XHR arraybuffer → manual base64 (fallback for file://)
+  const xhrResult = await new Promise(res=>{
+    const xhr=new XMLHttpRequest();
+    xhr.open('GET',url,true);xhr.responseType='arraybuffer';
+    xhr.onload=function(){
+      if(this.response&&this.response.byteLength>0){
+        const bytes=new Uint8Array(this.response);
+        let bin='';for(let i=0;i<bytes.length;i++)bin+=String.fromCharCode(bytes[i]);
+        const ext=src.split('.').pop().toLowerCase();
+        const mime=(ext==='jpg'||ext==='jpeg')?'image/jpeg':'image/png';
+        res('data:'+mime+';base64,'+btoa(bin));
+      }else res(null);
+    };
+    xhr.onerror=()=>res(null);
+    try{xhr.send();}catch{res(null);}
+  });
+  if(xhrResult)return xhrResult;
+
+  // Method 3: existing DOM img → isolated canvas (may taint, but try)
+  const domImg=document.querySelector(`img[src="${src}"],img[src="${url}"]`);
+  if(domImg&&domImg.complete&&domImg.naturalWidth>0){
+    const tc=document.createElement('canvas');
+    tc.width=domImg.naturalWidth;tc.height=domImg.naturalHeight;
+    try{tc.getContext('2d').drawImage(domImg,0,0);return tc.toDataURL('image/jpeg',.82);}catch(_){}
+  }
+  return null;
+}
+
+async function b64ToImg(b64){
+  if(!b64)return null;
+  return new Promise(res=>{
+    const i=new Image();i.onload=()=>res(i);i.onerror=()=>res(null);i.src=b64;
+  });
+}
+
+/* layout reference images per spread */
+const SPREAD_LAYOUT_IMG={
+  celtic:'Asset/img/Celtic_Cross.jpg',
+  horseshoe:'Asset/img/Horseshoe.jpg',
+  three:null,one:null
+};
+
+async function exportPDF(spread,topic,question,placed,reading){
+  const{jsPDF}=window.jspdf;
+  const TOPIC_NAMES={love:'❤ ความรัก',career:'การงาน',money:'การเงิน',spiritual:'จิตวิญญาณ',free:'ถามอิสระ'};
+  const now=new Date();
+  const dateStr=now.toLocaleDateString('th-TH',{year:'numeric',month:'long',day:'numeric'});
+  const fileDate=now.toISOString().slice(0,10);
+
+  /* ── Single canvas, A4 portrait ── */
+  const PW=794,PAD=36;
+  const LINE=18,SM=14;
+
+  // Measure total height needed first (dummy pass)
+  const dummy=document.createElement('canvas');dummy.width=PW;dummy.height=100;
+  const dx=dummy.getContext('2d');
+  const contentW=PW-PAD*2-20;
+
+  let totalH=PAD+30; // top
+  totalH+=50; // title
+  totalH+=22+18+18+12; // meta lines
+  totalH+=10; // divider
+  // card rows
+  reading.entries.forEach(e=>{
+    dx.font=`13px Sarabun,Arial,sans-serif`;
+    const lines=wrapText(dx,e.text,contentW-260);
+    totalH+=Math.max(lines.length*LINE+8, 52)+10;
+  });
+  totalH+=20; // divider before summary
+  dx.font=`13px Sarabun,Arial,sans-serif`;
+  const sumLines=wrapText(dx,reading.summary,contentW-20);
+  totalH+=sumLines.length*LINE+50;
+  totalH+=PAD+20; // bottom
+
+  const PH=Math.max(1123,totalH);
+
+  /* ── Draw ── */
+  const cv=document.createElement('canvas');cv.width=PW;cv.height=PH;
+  const ctx=cv.getContext('2d');
+
+  // Background
+  ctx.fillStyle='#0a0612';ctx.fillRect(0,0,PW,PH);
+  const gr=ctx.createRadialGradient(PW*.25,PH*.1,0,PW*.5,PH*.5,PW*.9);
+  gr.addColorStop(0,'rgba(26,10,46,.9)');gr.addColorStop(1,'rgba(0,0,0,0)');
+  ctx.fillStyle=gr;ctx.fillRect(0,0,PW,PH);
+  // border
+  ctx.strokeStyle='#c9a84c';ctx.lineWidth=1.5;ctx.strokeRect(PAD,PAD,PW-PAD*2,PH-PAD*2);
+  // stars
+  ctx.fillStyle='rgba(201,168,76,.15)';
+  for(let i=0;i<40;i++){
+    const px=((i*173+7)%PW+PW)%PW;const py=((i*251+11)%PH+PH)%PH;
+    ctx.beginPath();ctx.arc(px,py,(i%3)*.5+.4,0,Math.PI*2);ctx.fill();
+  }
+
+  let y=PAD+24;
+
+  // Title
+  ctx.font='bold 26px Sarabun,Arial,sans-serif';ctx.fillStyle='#c9a84c';ctx.textAlign='center';
+  ctx.fillText('🔮  Sofia Tarot — คำทำนายไพ่',PW/2,y+24);y+=48;
+
+  // Meta
+  ctx.font='14px Sarabun,Arial,sans-serif';ctx.fillStyle='#9a8a7a';
+  ctx.fillText(`${spread.name}   |   ${TOPIC_NAMES[topic]||topic}   |   ${dateStr}`,PW/2,y);y+=22;
+  ctx.font='13px Sarabun,Arial,sans-serif';ctx.fillStyle='#c0b090';
+  const qw=wrapText(ctx,`คำถาม: "${question}"`,contentW);
+  qw.slice(0,3).forEach(l=>{ctx.fillText(l,PW/2,y);y+=18;});y+=10;
+
+  // Divider
+  const divider=(dy)=>{
+    ctx.strokeStyle='rgba(201,168,76,.4)';ctx.lineWidth=.7;
+    ctx.beginPath();ctx.moveTo(PAD+10,dy);ctx.lineTo(PW-PAD-10,dy);ctx.stroke();
+  };
+  divider(y);y+=16;
+
+  // Table header
+  const C1=PAD+14,C2=C1+170,C3=C2+180;
+  ctx.fillStyle='rgba(201,168,76,.1)';ctx.fillRect(PAD+10,y,contentW,22);
+  ctx.font='bold 11px Sarabun,Arial,sans-serif';ctx.fillStyle='#c9a84c';ctx.textAlign='left';
+  ctx.fillText('ตำแหน่ง',C1,y+15);
+  ctx.fillText('ไพ่',C2,y+15);
+  ctx.fillText('คำทำนาย',C3,y+15);
+  y+=26;
+
+  // Card rows
+  reading.entries.forEach((e,i)=>{
+    ctx.font='13px Sarabun,Arial,sans-serif';
+    const tlines=wrapText(ctx,e.text,PW-C3-PAD-16);
+    const rowH=Math.max(tlines.length*LINE+6, 46);
+
+    if(i%2===0){ctx.fillStyle='rgba(255,255,255,.025)';ctx.fillRect(PAD+10,y,contentW,rowH);}
+
+    ctx.textAlign='left';
+    ctx.font='12px Sarabun,Arial,sans-serif';ctx.fillStyle='#9a8a7a';
+    ctx.fillText(e.pos,C1,y+18);
+
+    ctx.font='bold 13px Sarabun,Arial,sans-serif';ctx.fillStyle=e.isMajor?'#ffd700':'#e8c97a';
+    ctx.fillText((e.isMajor?'⭐ ':'')+e.name,C2,y+18);
+
+    ctx.font='13px Sarabun,Arial,sans-serif';ctx.fillStyle='#e8dcc8';
+    tlines.forEach((tl,ti)=>ctx.fillText(tl,C3,y+18+ti*LINE));
+
+    y+=rowH+8;
+  });
+  y+=12;
+
+  // Summary
+  divider(y);y+=18;
+  ctx.font='bold 15px Sarabun,Arial,sans-serif';ctx.fillStyle='#c9a84c';ctx.textAlign='left';
+  ctx.fillText('✦ สรุปจากโซเฟีย',PAD+14,y);y+=22;
+  ctx.strokeStyle='rgba(201,168,76,.3)';ctx.lineWidth=1;
+  ctx.strokeRect(PAD+10,y,contentW,sumLines.length*LINE+20);
+  ctx.fillStyle='rgba(45,27,78,.4)';ctx.fillRect(PAD+10,y,contentW,sumLines.length*LINE+20);
+  ctx.font='13px Sarabun,Arial,sans-serif';ctx.fillStyle='#e8dcc8';
+  sumLines.forEach((l,i)=>ctx.fillText(l,PAD+20,y+18+i*LINE));
+  y+=sumLines.length*LINE+30;
+
+  // Footer
+  ctx.textAlign='center';ctx.font='10px Sarabun,Arial,sans-serif';
+  ctx.fillStyle='rgba(201,168,76,.3)';
+  ctx.fillText('Sofia Tarot  •  ไพ่บอก จักรวาลนำทาง คุณตัดสินใจ',PW/2,PH-PAD-8);
+
+  /* ── Export ── */
+  const doc=new jsPDF({unit:'px',format:[PW,PH],orientation:'portrait'});
+  try{doc.addImage(cv.toDataURL('image/jpeg',.9),'JPEG',0,0,PW,PH);}
+  catch(e){try{doc.addImage(cv.toDataURL('image/png'),'PNG',0,0,PW,PH);}catch(_){}}
+  doc.save(`Sofia_Tarot_${fileDate}.pdf`);
+}
+
+
+const SPREAD_DEFS={
+  one:{id:'one',name:'1 ใบ — ถามตอบ',icon:'🎴',count:1,W:90,H:140,
+    slots:[{id:0,label:'คำตอบจากจักรวาล',voice:'voice_02_focus_mind',x:10,y:14,rotate:0}]},
+  three:{id:'three',name:'3 ใบ — อดีต ปัจจุบัน อนาคต',icon:'🌙',count:3,W:260,H:160,
+    slots:[
+      {id:0,label:'อดีต',voice:'slot_3card_01_past',x:0,y:24,rotate:0},
+      {id:1,label:'ปัจจุบัน',voice:'slot_3card_02_present',x:95,y:24,rotate:0},
+      {id:2,label:'อนาคต',voice:'slot_3card_03_future',x:190,y:24,rotate:0},
+    ]},
+  horseshoe:{id:'horseshoe',name:'Horseshoe (7 ใบ)',icon:'🧲',count:7,W:380,H:430,
+    slots:[
+      {id:0,label:'อดีต',voice:'slot_horse_01_past',x:10,y:298,rotate:0},
+      {id:1,label:'ปัจจุบัน',voice:'slot_horse_02_present',x:10,y:168,rotate:0},
+      {id:2,label:'อิทธิพลซ่อนเร้น',voice:'slot_horse_03_hidden',x:80,y:55,rotate:0},
+      {id:3,label:'อุปสรรค',voice:'slot_horse_04_obstacle',x:155,y:10,rotate:0},
+      {id:4,label:'อิทธิพลภายนอก',voice:'slot_horse_05_external',x:230,y:55,rotate:0},
+      {id:5,label:'คำแนะนำ',voice:'slot_horse_06_guidance',x:300,y:168,rotate:0},
+      {id:6,label:'ผลลัพธ์',voice:'slot_horse_07_outcome',x:300,y:298,rotate:0},
+    ]},
+  celtic:{id:'celtic',name:'Celtic Cross (10 ใบ)',icon:'✝️',count:10,W:470,H:510,
+    slots:[
+      {id:0,label:'สถานการณ์',voice:'slot_celtic_01_present',x:140,y:199,rotate:0},
+      {id:1,label:'ความท้าทาย',voice:'slot_celtic_02_challenge',x:140,y:199,rotate:90},
+      {id:2,label:'รากเหง้า',voice:'slot_celtic_03_root',x:140,y:326,rotate:0},
+      {id:3,label:'อดีตใกล้',voice:'slot_celtic_04_past',x:55,y:199,rotate:0},
+      {id:4,label:'ความเป็นไปได้',voice:'slot_celtic_05_above',x:140,y:72,rotate:0},
+      {id:5,label:'อนาคตอันใกล้',voice:'slot_celtic_06_future',x:225,y:199,rotate:0},
+      {id:6,label:'ความคิดความรู้สึก',voice:'slot_celtic_07_self',x:380,y:383,rotate:0},
+      {id:7,label:'คนรอบข้าง',voice:'slot_celtic_08_environment',x:380,y:257,rotate:0},
+      {id:8,label:'ความหวังความกลัว',voice:'slot_celtic_09_hopes',x:380,y:131,rotate:0},
+      {id:9,label:'ผลลัพธ์',voice:'slot_celtic_10_outcome',x:380,y:5,rotate:0},
+    ]}
+};
+
+const TOPICS=[
+  {id:'free',label:'🔮 ถามอิสระ',cls:'sel-free'},
+  {id:'love',label:'❤️ ความรัก',cls:'sel-love'},
+  {id:'career',label:'💼 การงาน',cls:'sel-career'},
+  {id:'money',label:'💰 การเงิน',cls:'sel-money'},
+  {id:'spiritual',label:'✨ จิตวิญญาณ',cls:'sel-spiritual'},
+];
+const QUICK_Q={
+  love:['เขารู้สึกอย่างไรกับฉัน','ความสัมพันธ์นี้จะพัฒนาไหม','ฉันจะพบคนรักเมื่อไร','คนเก่าจะกลับมาไหม'],
+  career:['ควรเปลี่ยนงานไหม','จะได้เลื่อนตำแหน่งไหม','ธุรกิจนี้จะสำเร็จไหม'],
+  money:['การเงิน 3 เดือนข้างหน้าเป็นอย่างไร','ควรลงทุนหรือไม่','จะมีโอกาสได้เงินก้อนไหม'],
+  spiritual:['บทเรียนชีวิตตอนนี้คืออะไร','จักรวาลต้องการบอกอะไรฉัน'],
+  free:[]
+};
+const SOFIA_MSGS={
+  welcome:'ยินดีต้อนรับสู่ห้องแห่งโชคชะตาค่ะ ฉันโซเฟีย หมอดูไพ่ทาโรต์ระดับโลก เลือกรูปแบบการทำนายที่ต้องการได้เลยนะคะ',
+  topic:'เลือกหัวข้อที่อยู่ในใจค่ะ แล้วตั้งคำถามให้ชัดเจนก่อนที่ไพ่จะเปิดเผยค่ะ',
+  question:'ตั้งจิตและระลึกถึงสิ่งที่อยู่ในใจค่ะ พิมพ์คำถามหรือเลือกจากตัวเลือกด้านล่างได้เลยค่ะ',
+  shuffle:'กำลังสับไพ่เพื่อคุณอยู่ค่ะ ปล่อยใจให้ว่าง พลังงานจากจักรวาลกำลังไหลผ่านไพ่แต่ละใบค่ะ',
+  selectSlot:'เลือก slot ที่ต้องการก่อนนะคะ แล้วค่อยคลิกกองไพ่เพื่อวางค่ะ ✨',
+  allPlaced:'ไพ่วางครบแล้วค่ะ ✨ คลิกที่ไพ่แต่ละใบเพื่อเปิดเผย หรือกดปุ่มเปิดพร้อมกันทุกใบได้เลยค่ะ',
+  reading:'กำลังอ่านพลังงานทั้งหมดเพื่อคุณค่ะ',
+  done:'นั่นคือสิ่งที่ไพ่ต้องการบอกคุณในวันนี้ค่ะ คุณคือผู้เขียนชะตาชีวิตของตัวเองเสมอนะคะ 🌟',
+};
+const PHASE_VIDEO={
+  welcome:'Asset/vdo/video_01_welcome.mp4',topic:'Asset/vdo/video_01_welcome.mp4',
+  question:'Asset/vdo/video_04_reading.mp4',shuffle:'Asset/vdo/video_02_shuffling.mp4',
+  spread:'Asset/vdo/video_03_reveal.mp4',reading:'Asset/vdo/video_04_reading.mp4',
+};
+const FAREWELL_VIDEO='Asset/vdo/video_05_farewell.mp4';
+
+const {useState,useEffect,useRef}=React;
+function shuffleArr(a){return [...a].sort(()=>Math.random()-.5)}
+function buildDeck(){return shuffleArr(Object.values(CARDS).map(c=>({...c,reversed:Math.random()<.2})));}
+function burst(x,y){
+  for(let i=0;i<12;i++){
+    const el=document.createElement('div');el.className='particle';
+    el.style.cssText=`left:${x}px;top:${y}px;width:${3+Math.random()*5}px;height:${3+Math.random()*5}px;background:${Math.random()>.5?'#c9a84c':'#e8c97a'};animation-duration:${.7+Math.random()*.5}s;transform:translate(${(Math.random()-.5)*60}px,0)`;
+    document.body.appendChild(el);setTimeout(()=>el.remove(),1200);
+  }
+}
+let _audio=null;
+function playVoice(f){if(!f)return;if(_audio){_audio.pause();_audio=null;}const a=new Audio('Asset/voice/'+f+'.mp3');a.play().catch(()=>{});_audio=a;}
+
+/* ── SofiaMedia: starts muted, unmutes on first interaction ── */
+function SofiaMedia({phase}){
+  const vRef=useRef(null);
+  const[vOk,setVOk]=useState(false);
+  const[muted,setMuted]=useState(true);
+  const src=PHASE_VIDEO[phase]||'Asset/vdo/video_01_welcome.mp4';
+
+  // Unmute after first user interaction
+  useEffect(()=>{
+    const handler=()=>{
+      setMuted(false);
+      if(vRef.current){vRef.current.muted=false;vRef.current.play().catch(()=>{});}
+    };
+    document.addEventListener('click',handler,{once:true});
+    document.addEventListener('touchstart',handler,{once:true});
+    return()=>{document.removeEventListener('click',handler);document.removeEventListener('touchstart',handler)};
+  },[]);
+
+  useEffect(()=>{
+    setVOk(false);const v=vRef.current;if(!v)return;
+    v.src=src;v.muted=muted;v.load();
+    const ok=()=>setVOk(true),err=()=>setVOk(false);
+    v.addEventListener('canplay',ok);v.addEventListener('error',err);
+    return()=>{v.removeEventListener('canplay',ok);v.removeEventListener('error',err)};
+  },[src]);
+
+  return React.createElement('div',null,
+    React.createElement('div',{style:{position:'relative',width:240,height:324}},
+      React.createElement('video',{ref:vRef,autoPlay:true,loop:true,muted:true,playsInline:true,
+        className:'sofia-media',style:{display:vOk?'block':'none'}}),
+      React.createElement('img',{className:'sofia-media',src:'Asset/img/Master.png',alt:'Sofia',
+        style:{display:vOk?'none':'block'}})
+    ),
+    muted&&vOk&&React.createElement('button',{className:'unmute-btn',
+      onClick:()=>{setMuted(false);if(vRef.current){vRef.current.muted=false;vRef.current.play().catch(()=>{});}}
+    },'🔊 เปิดเสียงวิดีโอ')
+  );
+}
+
+function FlyingCard({fromRect,toRect,onDone}){
+  const dx=toRect.left-fromRect.left,dy=toRect.top-fromRect.top;
+  const scl=(toRect.width/fromRect.width).toFixed(3);
+  return React.createElement('div',{className:'flying-card',
+    style:{left:fromRect.left,top:fromRect.top,width:fromRect.width,height:fromRect.height,
+      '--fx':dx/2+'px','--fy':dy/2-40+'px','--tx':dx+'px','--ty':dy+'px','--ts':scl},
+    onAnimationEnd:onDone
+  },React.createElement('img',{src:'Asset/img/BACK_CARD.png',alt:''}));
+}
+
+/* ── Farewell Overlay: plays video_05 half-screen, then resets ── */
+function FarewellOverlay({onDone}){
+  const vRef=useRef(null);
+  const[vEnded,setVEnded]=useState(false);
+
+  useEffect(()=>{
+    playVoice('voice_15_farewell');
+    const v=vRef.current;if(!v)return;
+    v.src=FAREWELL_VIDEO;v.muted=false;v.currentTime=0;
+    v.play().catch(()=>{});
+    const onEnd=()=>{setVEnded(true);setTimeout(onDone,1200);};
+    const onErr=()=>{setVEnded(true);setTimeout(onDone,2000);};
+    v.addEventListener('ended',onEnd);v.addEventListener('error',onErr);
+    return()=>{v.removeEventListener('ended',onEnd);v.removeEventListener('error',onErr);};
+  },[]);
+
+  return React.createElement('div',{
+    style:{position:'fixed',inset:0,zIndex:500,
+      background:'rgba(5,2,15,.82)',backdropFilter:'blur(6px)',
+      display:'flex',alignItems:'center',justifyContent:'center'}
+  },
+    React.createElement('div',{
+      style:{background:'linear-gradient(135deg,#120620,#2d1b4e)',
+        border:'1.5px solid #c9a84c',borderRadius:18,
+        padding:'1.6rem 1.4rem',maxWidth:430,width:'92%',
+        textAlign:'center',
+        boxShadow:'0 0 50px rgba(201,168,76,.25), 0 0 100px rgba(74,45,122,.4)',
+        position:'relative'}
+    },
+      /* Stars deco */
+      React.createElement('div',{style:{position:'absolute',top:10,left:16,color:'rgba(201,168,76,.35)',fontSize:'1rem',pointerEvents:'none'}},'✦'),
+      React.createElement('div',{style:{position:'absolute',top:10,right:16,color:'rgba(201,168,76,.35)',fontSize:'1rem',pointerEvents:'none'}},'✦'),
+
+      React.createElement('div',{style:{color:'#c9a84c',fontFamily:'Cinzel,serif',
+        fontSize:'1rem',letterSpacing:'.08em',marginBottom:'1rem'}},
+        '✦  โซเฟียฝากไว้...  ✦'),
+
+      /* Video */
+      React.createElement('div',{style:{position:'relative',borderRadius:12,overflow:'hidden',
+        border:'2px solid rgba(201,168,76,.6)',
+        boxShadow:'0 0 20px rgba(201,168,76,.2)',marginBottom:'1rem'}},
+        React.createElement('video',{ref:vRef,playsInline:true,autoPlay:true,
+          style:{width:'100%',maxHeight:280,display:'block',background:'#000'}}),
+        /* Overlay shimmer */
+        React.createElement('div',{style:{position:'absolute',inset:0,
+          background:'linear-gradient(to bottom,transparent 60%,rgba(18,6,32,.6))',
+          pointerEvents:'none'}})
+      ),
+
+      /* Tagline */
+      React.createElement('p',{style:{color:'#c0b090',fontSize:'.88rem',lineHeight:1.6,marginBottom:'1rem'}},
+        vEnded
+          ? 'จักรวาลได้ยินคุณแล้วค่ะ ✨\nขอบคุณที่ไว้วางใจโซเฟียนะคะ 🌟'
+          : 'ไพ่บอกแล้ว จักรวาลนำทาง คุณตัดสินใจค่ะ 🔮'),
+
+      /* Skip button */
+      React.createElement('button',{className:'btn btn-sm',
+        style:{borderColor:'rgba(201,168,76,.5)',color:'rgba(201,168,76,.7)',fontSize:'.76rem'},
+        onClick:onDone
+      },'ข้ามและกลับหน้าแรก →')
+    )
+  );
+}
+
+function CardSlot({slot,card,isActive,isFlipped,zIndex,onClickSlot,onFlipCard,slotRef}){
+  const hasCard=!!card;
+  const innerCls='cslot-inner'+(isActive?' active':'')+(hasCard?' has-card':'')+((!hasCard&&!isActive)?' hover-empty':'')+(slot.rotate===90?' rotate90':'');
+  return React.createElement('div',{className:'cslot',ref:slotRef,
+    style:{left:slot.x,top:slot.y,zIndex:zIndex||1},
+    onClick:()=>{
+      if(!hasCard)onClickSlot(slot.id);
+      else if(!isFlipped)onFlipCard(slot.id);
+      else onClickSlot(slot.id,'detail');
+    }
+  },
+    React.createElement('div',{className:innerCls},
+      !hasCard&&React.createElement(React.Fragment,null,
+        React.createElement('span',{className:'cslot-num'},slot.id+1),
+        React.createElement('span',{className:'cslot-label'},slot.label)
+      ),
+      hasCard&&React.createElement('div',{className:'cflip-wrap'},
+        React.createElement('div',{className:'cflip-inner'+(isFlipped?' flipped':'')},
+          React.createElement('div',{className:'cback'},React.createElement('img',{src:'Asset/img/BACK_CARD.png',alt:''})),
+          React.createElement('div',{className:'cface'},React.createElement('img',{src:card.img,alt:card.name,onError:e=>{e.target.style.display='none'}}))
+        )
+      )
+    ),
+    React.createElement('div',{className:'cslot-name-label'},
+      isFlipped&&card?(card.name_th||card.name):slot.label)
+  );
+}
+
+function SpreadLayout({spreadDef,placed,activeSlot,flipped,onClickSlot,onFlipCard,slotRefs}){
+  const getZ=(s)=>{
+    if(spreadDef.id==='celtic'){
+      if(s.id===0)return placed[0]?2:12;
+      if(s.id===1)return placed[0]?15:3;
+    }
+    return activeSlot===s.id?10:(s.rotate===90?5:1);
+  };
+  return React.createElement('div',{className:'spread-outer'},
+    React.createElement('div',{className:'spread-canvas',
+      style:{width:spreadDef.W,height:spreadDef.H+60,position:'relative'}},
+      spreadDef.slots.map(s=>
+        React.createElement(CardSlot,{key:s.id,slot:s,card:placed[s.id]||null,
+          isActive:activeSlot===s.id,isFlipped:flipped.has(s.id),zIndex:getZ(s),
+          onClickSlot,onFlipCard,slotRef:el=>{if(slotRefs)slotRefs.current[s.id]=el}})
+      )
+    )
+  );
+}
+
+function DeckPile({remain,shuffleAnim,onShuffle,onDraw,canDraw,deckRef}){
+  return React.createElement('div',{className:'deck-area'},
+    React.createElement('div',{className:'deck-pile'+(shuffleAnim?' shuffling':''),ref:deckRef,
+      onClick:canDraw?onDraw:onShuffle,title:canDraw?'คลิกจั่วไพ่':'คลิกสับไพ่'},
+      [0,1,2,3,4].map(i=>React.createElement('div',{key:i,className:'dc',
+        style:{top:i*1.5+'px',left:i+'px',zIndex:i}},
+        React.createElement('img',{src:'Asset/img/BACK_CARD.png',alt:''})))),
+    React.createElement('div',{className:'deck-label'},canDraw?'👆 คลิกจั่วไพ่':'👆 คลิกสับไพ่'),
+    React.createElement('div',{className:'deck-remain'},`เหลือ ${remain} ใบ`)
+  );
+}
+
+function App(){
+  const[phase,setPhase]=useState('welcome');
+  const[spreadId,setSpreadId]=useState('three');
+  const[topic,setTopic]=useState('free');
+  const[question,setQuestion]=useState('');
+  const[deck,setDeck]=useState([]);
+  const[deckIdx,setDeckIdx]=useState(0);
+  const[placed,setPlaced]=useState({});
+  const[activeSlot,setActiveSlot]=useState(null);
+  const[flipped,setFlipped]=useState(new Set());
+  const[flying,setFlying]=useState(null);
+  const[shuffleAnim,setShuffleAnim]=useState(false);
+  const[shuffleCount,setShuffleCount]=useState(0);
+  const[sofiaMsg,setSofiaMsg]=useState(SOFIA_MSGS.welcome);
+  const[reading,setReading]=useState(null);
+  const[modalCard,setModalCard]=useState(null);
+  const[genReading,setGenReading]=useState(false);
+  const[pdfLoading,setPdfLoading]=useState(false);
+  const[autoPlacing,setAutoPlacing]=useState(false);
+
+  const spread=SPREAD_DEFS[spreadId];
+  const deckRef=useRef(null);
+  const slotRefs=useRef({});
+
+  const setSofia=(msg,voice)=>{setSofiaMsg(msg);if(voice)playVoice(voice);};
+  const allPlaced=spread.slots.every(s=>placed[s.id]);
+  const allFlipped=allPlaced&&spread.slots.every(s=>flipped.has(s.id));
+  const placedCount=Object.keys(placed).length;
+
+  useEffect(()=>{
+    if(allFlipped&&!reading&&!genReading&&phase==='spread'){
+      setGenReading(true);setSofia(SOFIA_MSGS.reading,'voice_05_reveal_start');
+      setTimeout(()=>{
+        const r=buildReading(spread,placed,topic,question);
+        setReading(r);setPhase('reading');setGenReading(false);
+        setSofia(SOFIA_MSGS.done,'voice_11_reading_summary');
+      },800);
+    }
+  },[allFlipped,reading,genReading,phase]);
+
+  useEffect(()=>{
+    if(allPlaced&&!allFlipped&&phase==='spread'&&!reading)
+      setSofia(SOFIA_MSGS.allPlaced,'voice_04_laying_cards');
+  },[allPlaced]);
+
+  const doShuffle=()=>{
+    setShuffleAnim(true);setSofia(SOFIA_MSGS.shuffle,'voice_03_shuffling');
+    setShuffleCount(c=>c+1);
+    setTimeout(()=>{setDeck(shuffleArr(deck.length?deck:buildDeck()));setShuffleAnim(false);},600);
+  };
+
+  const startSpread=()=>{
+    if(!deck.length)setDeck(buildDeck());
+    setPlaced({});setFlipped(new Set());setActiveSlot(null);setReading(null);setDeckIdx(0);
+    setPhase('spread');setSofia(SOFIA_MSGS.selectSlot,'voice_04_laying_cards');
+  };
+
+  const handleClickSlot=(slotId,mode)=>{
+    if(mode==='detail'){setModalCard(placed[slotId]);return;}
+    if(placed[slotId])return;
+    setActiveSlot(slotId);
+    const s=spread.slots.find(x=>x.id===slotId);
+    if(s?.voice)setSofia(`ตำแหน่ง ${slotId+1}: ${s.label} — คลิกกองไพ่เพื่อวางค่ะ ✨`,s.voice);
+  };
+
+  const handleFlipCard=(slotId)=>{
+    if(!placed[slotId])return;
+    burst(window.innerWidth/2,window.innerHeight/3);
+    setFlipped(f=>{const n=new Set(f);n.add(slotId);return n;});
+  };
+
+  const handleFlipAll=()=>{
+    setFlipped(new Set(spread.slots.map(s=>s.id)));
+    burst(window.innerWidth/2,window.innerHeight/3);
+    setSofia(SOFIA_MSGS.reading,'voice_05_reveal_start');
+  };
+
+  const handleClickDeck=()=>{
+    if(flying||autoPlacing)return;
+    if(activeSlot===null){setSofia(SOFIA_MSGS.selectSlot);return;}
+    if(placed[activeSlot]){setSofia('ตำแหน่งนี้มีไพ่แล้วค่ะ เลือก slot อื่นได้นะคะ 🎴');setActiveSlot(null);return;}
+    const d=deck.length?deck:buildDeck();
+    const card=d[deckIdx];
+    if(!card)return;
+    const deckEl=deckRef.current,slotEl=slotRefs.current[activeSlot];
+    if(!deckEl||!slotEl)return;
+    setFlying({card,slotId:activeSlot,fromRect:deckEl.getBoundingClientRect(),toRect:slotEl.getBoundingClientRect()});
+    setDeckIdx(i=>i+1);setActiveSlot(null);
+  };
+
+  const onFlyDone=()=>{
+    if(!flying)return;
+    const cb=flying.cb;
+    setPlaced(p=>({...p,[flying.slotId]:flying.card}));
+    setFlying(null);
+    if(cb)setTimeout(cb,250);
+    else{const rem=spread.slots.filter(s=>!placed[s.id]&&s.id!==flying.slotId).length;
+      if(rem>0)setSofia(`วางไพ่แล้ว ${placedCount+1}/${spread.count} ใบค่ะ ✨`);}
+  }
+  const handleAutoPlace=()=>{
+    if(autoPlacing)return;
+    const empties=spread.slots.filter(s=>!placed[s.id]).map(s=>s.id);
+    if(!empties.length)return;
+    setAutoPlacing(true);setSofia('วางไพ่อัตโนมัติค่ะ ✨','voice_04_laying_cards');
+    const d=deck.length?deck:buildDeck();
+    const startIdx=deckIdx;
+    const go=(i)=>{
+      if(i>=empties.length){setAutoPlacing(false);setDeckIdx(startIdx+i);return;}
+      const slotId=empties[i];
+      const card=d[startIdx+i];
+      if(!card){setAutoPlacing(false);return;}
+      const deckEl=deckRef.current,slotEl=slotRefs.current[slotId];
+      if(!deckEl||!slotEl){go(i+1);return;}
+      setTimeout(()=>{
+        setFlying({card,slotId,fromRect:deckEl.getBoundingClientRect(),toRect:slotEl.getBoundingClientRect(),cb:()=>go(i+1)});
+      },350);
+    };
+    go(0);
+  };
+
+  const handleExportPDF=async()=>{
+    if(pdfLoading)return;
+    setPdfLoading(true);setSofia('กำลังสร้าง PDF ค่ะ รอสักครู่นะคะ 📄','voice_14_export_pdf');
+    try{await exportPDF(spread,topic,question,placed,reading);}
+    catch(e){console.error(e);}
+    finally{setPdfLoading(false);}
+  };
+
+  const[htmlLoading,setHtmlLoading]=useState(false);
+  const handleExportHTML=()=>{
+    if(htmlLoading||!reading)return;
+    setHtmlLoading(true);
+    try{
+      const TOPIC_NAMES={love:'❤ ความรัก',career:'การงาน',money:'การเงิน',spiritual:'จิตวิญญาณ',free:'ถามอิสระ'};
+      const now=new Date();
+      const dateStr=now.toLocaleDateString('th-TH',{year:'numeric',month:'long',day:'numeric'});
+      const fileDate=now.toISOString().slice(0,10);
+      const cardRows=reading.entries.map(e=>`
+        <tr>
+          <td class="pos">${e.pos}</td>
+          <td class="name">${e.isMajor?'⭐ ':''}${e.name}</td>
+          <td class="text">${e.text.replace(/\n/g,' ')}</td>
+        </tr>`).join('');
+      const html=`<!DOCTYPE html>
+<html lang="th"><head><meta charset="utf-8">
+<title>Sofia Tarot — ${spread.name} — ${fileDate}</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{font-family:'Sarabun',TH SarabunPSK,Arial,sans-serif;background:#0a0612;color:#e8dcc8;padding:2.5rem 3rem;line-height:1.7;}
+  h1{color:#c9a84c;font-size:1.6rem;text-align:center;margin-bottom:.3rem;letter-spacing:.05em;}
+  .sub{text-align:center;color:#9a8a7a;font-size:.85rem;margin-bottom:1.4rem;}
+  .divider{border:none;border-top:1px solid rgba(201,168,76,.4);margin:1rem 0;}
+  table{width:100%;border-collapse:collapse;margin:1rem 0;}
+  th{background:rgba(201,168,76,.12);color:#c9a84c;font-size:.8rem;padding:.5rem .8rem;text-align:left;border-bottom:1px solid rgba(201,168,76,.3);}
+  td{padding:.55rem .8rem;vertical-align:top;border-bottom:1px solid rgba(255,255,255,.05);font-size:.88rem;}
+  td.pos{color:#9a8a7a;white-space:nowrap;width:160px;}
+  td.name{color:#e8c97a;font-weight:bold;white-space:nowrap;width:180px;}
+  td.text{color:#e8dcc8;}
+  .summary{margin-top:1.2rem;padding:1rem 1.2rem;border:1px solid rgba(201,168,76,.3);border-radius:6px;background:rgba(45,27,78,.4);font-size:.9rem;}
+  .summary-title{color:#c9a84c;font-weight:bold;margin-bottom:.5rem;}
+  .footer{text-align:center;color:#4a3a2a;font-size:.72rem;margin-top:1.8rem;}
+</style></head><body>
+<h1>🔮 Sofia Tarot — คำทำนาย</h1>
+<div class="sub">${spread.name} &nbsp;|&nbsp; ${TOPIC_NAMES[topic]||topic} &nbsp;|&nbsp; ${dateStr}<br>คำถาม: "${question}"</div>
+<div class="divider"></div>
+<table>
+  <thead><tr><th>ตำแหน่ง</th><th>ไพ่</th><th>คำทำนาย</th></tr></thead>
+  <tbody>${cardRows}</tbody>
+</table>
+<div class="divider"></div>
+<div class="summary">
+  <div class="summary-title">✦ สรุปภาพรวม</div>
+  ${reading.summary.replace(/\n/g,'<br>')}
+</div>
+<div class="footer">Sofia Tarot · สร้างเมื่อ ${dateStr}</div>
+</body></html>`;
+      const blob=new Blob([html],{type:'text/html;charset=utf-8'});
+      const a=document.createElement('a');
+      a.href=URL.createObjectURL(blob);
+      a.download=`Sofia_Tarot_${fileDate}.html`;
+      document.body.appendChild(a);a.click();
+      setTimeout(()=>{URL.revokeObjectURL(a.href);document.body.removeChild(a);},2000);
+    }catch(e){console.error(e);}
+    finally{setHtmlLoading(false);}
+  };
+
+  const[farewellActive,setFarewellActive]=useState(false);
+
+  const doReset=()=>{
+    setFarewellActive(false);
+    setPhase('welcome');setTopic('free');setQuestion('');setDeck([]);setDeckIdx(0);
+    setPlaced({});setFlipped(new Set());setActiveSlot(null);setFlying(null);
+    setReading(null);setShuffleCount(0);setAutoPlacing(false);setGenReading(false);
+    setSofia(SOFIA_MSGS.welcome);
+  };
+
+  const reset=()=>{setFarewellActive(true);};
+
+  const steps=[
+    {label:'เลือก Spread',done:true,active:phase==='welcome'},
+    {label:'ตั้งคำถาม',done:['shuffle','spread','reading'].includes(phase),active:['topic','question'].includes(phase)},
+    {label:'สับไพ่',done:['spread','reading'].includes(phase),active:phase==='shuffle'},
+    {label:'วางไพ่',done:phase==='reading',active:phase==='spread'&&!allPlaced},
+    {label:'เปิดไพ่',done:phase==='reading',active:phase==='spread'&&allPlaced},
+    {label:'คำทำนาย',done:false,active:phase==='reading'},
+  ];
+  const remain=Math.max(0,78-deckIdx);
+
+  return React.createElement('div',{className:'app'},
+    React.createElement('div',{className:'header'},
+      React.createElement('h1',null,'🔮 โซเฟีย'),
+      React.createElement('p',null,'ไพ่บอก • จักรวาลนำทาง • คุณตัดสินใจ'),
+      React.createElement('div',{className:'divider'})
+    ),
+    React.createElement('div',{className:'sofia-row'},
+      React.createElement('div',{className:'sofia-frame'},
+        React.createElement('div',{className:'sofia-glow'}),
+        React.createElement(SofiaMedia,{phase}),
+        React.createElement('div',{className:'sofia-name'},'✦ โซเฟีย ✦')
+      ),
+      React.createElement('div',{className:'speech'},
+        React.createElement('div',{className:'speech-name'},'โซเฟีย:'),
+        React.createElement('div',{className:'speech-text'},sofiaMsg)
+      )
+    ),
+    React.createElement('div',{className:'steps'},
+      steps.map((s,i)=>React.createElement(React.Fragment,{key:i},
+        i>0&&React.createElement('div',{className:'step-line'}),
+        React.createElement('div',{className:'step '+(s.active?'active':s.done?'done':'')},
+          React.createElement('div',{className:'step-dot'}),s.label)
+      ))
+    ),
+    React.createElement('div',{className:'main'},
+
+      phase==='welcome'&&React.createElement('div',null,
+        React.createElement('div',{className:'section-box'},
+          React.createElement('div',{className:'section-label'},'✦ เลือกรูปแบบการทำนาย'),
+          React.createElement('div',{className:'spread-selector'},
+            Object.values(SPREAD_DEFS).map(sp=>
+              React.createElement('button',{key:sp.id,className:'spread-btn'+(spreadId===sp.id?' active':''),
+                onClick:()=>setSpreadId(sp.id)},`${sp.icon} ${sp.name}`)))),
+        React.createElement('div',{className:'action-row'},
+          React.createElement('button',{className:'btn btn-primary',
+            onClick:()=>{setPhase('topic');setSofia(SOFIA_MSGS.topic,'voice_02_focus_mind');}
+          },`${spread.icon} เลือก ${spread.name} →`))),
+
+      (phase==='topic'||phase==='question')&&React.createElement('div',null,
+          React.createElement('div',{className:'section-box'},
+            React.createElement('div',{className:'section-label'},'✦ หัวข้อที่ต้องการทำนาย'),
+            React.createElement('div',{className:'topic-grid'},
+              TOPICS.map(t=>React.createElement('button',{key:t.id,
+                className:'topic-btn'+(topic===t.id?' '+t.cls:''),
+                onClick:()=>{setTopic(t.id);setPhase('question');setSofia(SOFIA_MSGS.question);}
+              },t.label)))),
+          phase==='question'&&React.createElement('div',{className:'section-box'},
+            React.createElement('div',{className:'section-label'},'✦ คำถามของคุณ'),
+            React.createElement('textarea',{className:'q-input',rows:2,
+              placeholder:'พิมพ์คำถามในใจของคุณค่ะ...',
+              value:question,onChange:e=>setQuestion(e.target.value)}),
+            QUICK_Q[topic]?.length>0&&React.createElement('div',{className:'quick-q'},
+              React.createElement('span',{style:{fontSize:'.72rem',color:'var(--muted)'}},'เลือกเร็ว: '),
+              QUICK_Q[topic].map(q=>React.createElement('button',{key:q,className:'quick-btn',onClick:()=>setQuestion(q)},q))),
+            React.createElement('div',{className:'action-row'},
+              React.createElement('button',{className:'btn',onClick:()=>setPhase('welcome')},'← กลับ'),
+              React.createElement('button',{className:'btn btn-primary',
+                onClick:()=>{if(!question.trim()){setSofia('กรุณาพิมพ์คำถามก่อนนะคะ 🙏');return;}
+                  setPhase('shuffle');const d=buildDeck();setDeck(d);setDeckIdx(0);
+                  setSofia(SOFIA_MSGS.shuffle,'voice_03_shuffling');}
+              },'สับไพ่ →')
+            ))),
+
+      phase==='shuffle'&&React.createElement('div',null,
+        React.createElement('div',{className:'section-box',style:{textAlign:'center'}},
+          React.createElement('div',{className:'section-label',style:{textAlign:'center'}},'✦ สับไพ่'),
+          React.createElement('p',{style:{fontSize:'.82rem',color:'var(--muted)',marginBottom:'1rem'}},`"${question}"`),
+          React.createElement(DeckPile,{remain:deck.length,shuffleAnim,onShuffle:doShuffle,onDraw:()=>{},canDraw:false,deckRef}),
+          shuffleCount>0&&React.createElement('p',{style:{color:'var(--gold)',fontSize:'.8rem',marginTop:'.5rem'}},`สับไปแล้ว ${shuffleCount} ครั้งค่ะ ✨`)),
+        React.createElement('div',{className:'action-row'},
+          React.createElement('button',{className:'btn',onClick:()=>setPhase('question')},'← กลับ'),
+          React.createElement('button',{className:'btn btn-primary',onClick:startSpread},'เริ่มวางไพ่ ✨'))),
+
+      (phase==='spread'||phase==='reading')&&React.createElement('div',null,
+        React.createElement('div',{style:{textAlign:'center',color:'var(--muted)',fontSize:'.78rem',margin:'.4rem 0'}},
+          React.createElement('span',{style:{color:'var(--gold)'}},spread.name),
+          ` | "${question}"`,
+          !reading&&React.createElement('span',{style:{marginLeft:'.5rem'}},`วางแล้ว ${placedCount}/${spread.count} ใบ`)),
+
+        !reading&&React.createElement('div',{className:'slot-progress'},
+          spread.slots.map(s=>React.createElement('div',{key:s.id,
+            className:'sp-dot'+(placed[s.id]?' filled':(activeSlot===s.id?' sp-active':''))}))),
+
+        !reading&&!allPlaced&&React.createElement('div',{className:'hint-box'},
+          activeSlot!==null
+            ?React.createElement('span',null,'slot ',React.createElement('span',null,activeSlot+1),' กระพริบอยู่ — คลิก ',React.createElement('span',null,'กองไพ่'),' เพื่อวางค่ะ')
+            :React.createElement('span',null,'คลิก ',React.createElement('span',null,'หมายเลข slot'),' ที่ต้องการ → แล้วคลิก ',React.createElement('span',null,'กองไพ่'),' เพื่อวางค่ะ')),
+
+        React.createElement('div',{style:{display:'flex',gap:'1.5rem',justifyContent:'center',alignItems:'flex-start',flexWrap:'wrap',margin:'.8rem 0'}},
+          React.createElement(SpreadLayout,{spreadDef:spread,placed,activeSlot,flipped,
+            onClickSlot:handleClickSlot,onFlipCard:handleFlipCard,slotRefs}),
+          !reading&&React.createElement('div',{style:{paddingTop:'1rem',display:'flex',flexDirection:'column',gap:'.5rem',alignItems:'center'}},
+            React.createElement(DeckPile,{remain,shuffleAnim,onShuffle:doShuffle,
+              onDraw:handleClickDeck,canDraw:activeSlot!==null&&!placed[activeSlot]&&!autoPlacing,deckRef}),
+            React.createElement('button',{className:'btn btn-sm',style:{width:'80px'},onClick:doShuffle},'🔀 สับใหม่'),
+            !allPlaced&&React.createElement('button',{className:'btn btn-sm btn-auto',style:{width:'80px'},
+              onClick:handleAutoPlace,disabled:autoPlacing},autoPlacing?'กำลังวาง':'⚡ Auto วาง'))),
+
+        allPlaced&&!reading&&React.createElement('div',{className:'action-row'},
+          React.createElement('button',{className:'btn btn-flip',onClick:handleFlipAll},
+            genReading?React.createElement('span',null,'กำลังอ่าน',React.createElement('span',{className:'ldots'},
+              React.createElement('span'),React.createElement('span'),React.createElement('span'))):'✨ เปิดไพ่ทั้งหมด')),
+
+        reading&&React.createElement('div',{className:'reading-box'},
+          React.createElement('div',{className:'reading-title'},'🔮 คำทำนายจากโซเฟีย'),
+          React.createElement('p',{style:{textAlign:'center',fontSize:'.8rem',color:'var(--muted)',marginBottom:'.7rem'}},
+            `${TOPICS.find(t=>t.id===topic)?.label||''} | "${question}"`),
+          reading.entries.map((e,i)=>
+            React.createElement('div',{key:i,className:'reading-entry'},
+              React.createElement('img',{className:'rcard-thumb',src:e.img,alt:e.name,onError:ev=>{ev.target.style.display='none'}}),
+              React.createElement('div',{className:'rcard-content'},
+                React.createElement('div',{className:'reading-card-name'},(e.isMajor?'⭐ ':'')+e.name),
+                React.createElement('div',{style:{color:'var(--muted)',fontSize:'.74rem',marginBottom:'.35rem'}},'ตำแหน่ง: '+e.pos),
+                React.createElement('div',{className:'reading-text'},e.text)))),
+          React.createElement('div',{className:'reading-summary'},reading.summary)),
+
+        reading&&React.createElement('div',{className:'action-row'},
+          React.createElement('button',{className:'btn btn-export',
+            onClick:handleExportPDF,disabled:pdfLoading},pdfLoading?'กำลังสร้าง PDF...':'📄 Export PDF'),
+          React.createElement('button',{className:'btn btn-export',
+            style:{borderColor:'#4a7acc',color:'#4a7acc'},
+            onClick:handleExportHTML,disabled:htmlLoading},htmlLoading?'กำลังสร้าง...':'🌐 Export HTML'),
+          React.createElement('button',{className:'btn',
+            style:{borderColor:'#9a70e0',color:'#9a70e0'},
+            onClick:reset},'🌙 จบการทำนาย')))),
+
+    flying&&React.createElement(FlyingCard,{fromRect:flying.fromRect,toRect:flying.toRect,onDone:onFlyDone}),
+
+    farewellActive&&React.createElement(FarewellOverlay,{onDone:doReset}),
+
+    modalCard&&React.createElement('div',{className:'modal-bg',onClick:()=>setModalCard(null)},
+      React.createElement('div',{className:'modal',onClick:e=>e.stopPropagation()},
+        React.createElement('img',{src:modalCard.img,alt:modalCard.name,onError:e=>{e.target.style.display='none'}}),
+        React.createElement('div',{className:'modal-name'},modalCard.name_th||modalCard.name),
+        React.createElement('div',{className:'modal-suit'},modalCard.suit+(modalCard.reversed?' — กลับหัว':'')),
+        React.createElement('div',{className:'modal-meaning'},modalCard.meaning_th||''),
+        React.createElement('div',{style:{textAlign:'center',marginTop:'1rem'}},
+          React.createElement('button',{className:'btn',onClick:()=>setModalCard(null)},'ปิด'))))
+  );
+}
+ReactDOM.createRoot(document.getElementById('root')).render(React.createElement(App));
+</script>
+</body>
+</html>
